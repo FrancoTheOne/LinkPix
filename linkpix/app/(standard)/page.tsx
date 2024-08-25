@@ -1,36 +1,16 @@
 "use client";
-import Link from "next/link";
-import AlbumList, { AlbumListType } from "../../components/AlbumList/AlbumList";
-import {
-  Container,
-  Pagination,
-  Stack,
-  Tab,
-  Tabs,
-  TextField,
-} from "@mui/material";
-import {
-  ChangeEvent,
-  MutableRefObject,
-  RefObject,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import AlbumList from "../../components/AlbumList/AlbumList";
+import { Container, Pagination, Stack, Tab, Tabs } from "@mui/material";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useGetAlbumList from "@/services/album/useGetAlbumList";
 import AlbumSearch from "@/components/AlbumSearch/AlbumSearch";
+import AlbumGrid from "@/components/AlbumGrid/AlbumGrid";
+import { PaginationParams } from "@/types/common";
 
 enum HomeMode {
   "Browse",
   "Edit",
 }
-
-type PaginationParams = {
-  page: number;
-  limit: number;
-};
 
 const Home = () => {
   const [mode, setMode] = useState<HomeMode>(HomeMode.Browse);
@@ -53,10 +33,7 @@ const Home = () => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.code === "Backquote") {
         event.preventDefault();
-        setIsSearchFocused((prev) => {
-          // prev ? searchRef.current?.blur() : searchRef.current?.focus();
-          return !prev;
-        });
+        setIsSearchFocused((prev) => !prev);
         return;
       }
       if (isSearchFocused) {
@@ -75,8 +52,6 @@ const Home = () => {
               ? { page: prev.page + 1, limit: prev.limit }
               : prev
           );
-          break;
-        case "Backquote":
           break;
         default:
       }
@@ -150,6 +125,7 @@ const Home = () => {
       {mode === HomeMode.Browse && (
         <AlbumList data={albumList.data} isKeyInterrupt={isSearchFocused} />
       )}
+      {mode === HomeMode.Edit && <AlbumGrid data={albumList.data} />}
     </Container>
   );
 };

@@ -6,24 +6,26 @@ type GetAlbumListRequest = Partial<{
   search: string;
 }>;
 
+type Album = {
+  id: number;
+  name: string;
+  category: string;
+  author: string;
+  thumbnail: string;
+  source: string;
+};
+
 type GetAlbumListResponse = {
-  data: {
-    author: string;
-    category: string;
-    id: number;
-    name: string;
-    source: string;
-    thumbnail: string;
-  }[];
+  data: Album[];
   count: number;
   offset: number;
   limit: number;
 };
 
-export type AlbumListType = GetAlbumListResponse;
+type AlbumList = GetAlbumListResponse;
 
 const useGetAlbumList = (initParams: GetAlbumListRequest = {}) => {
-  const [data, setData] = useState<AlbumListType>({
+  const [data, setData] = useState<AlbumList>({
     data: [],
     count: 0,
     offset: 0,
@@ -67,3 +69,4 @@ const useGetAlbumList = (initParams: GetAlbumListRequest = {}) => {
 };
 
 export default useGetAlbumList;
+export type { Album, AlbumList };

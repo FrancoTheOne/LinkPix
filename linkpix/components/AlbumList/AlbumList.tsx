@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import AlbumListItem from "./AlbumListItem";
 import { Grid } from "@mui/material";
 import useBreakpoint from "@/hook/useBreakpoint";
+import { Album } from "@/services/album/useGetAlbumList";
 
 const NUM_OF_COLUMN: Record<string, number> = {
   xs: 3,
@@ -12,19 +13,8 @@ const NUM_OF_COLUMN: Record<string, number> = {
   xl: 7,
 };
 
-type Album = {
-  id: number;
-  name: string;
-  category: string;
-  author: string;
-  thumbnail: string;
-  source: string;
-};
-
-export type AlbumListType = Album[];
-
 interface AlbumListProps {
-  data: AlbumListType;
+  data: Album[];
   isKeyInterrupt: boolean;
 }
 

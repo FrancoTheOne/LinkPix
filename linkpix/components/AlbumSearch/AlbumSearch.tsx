@@ -1,8 +1,6 @@
 import { TextField } from "@mui/material";
 import React, {
   ChangeEvent,
-  forwardRef,
-  Ref,
   useCallback,
   useEffect,
   useRef,
@@ -18,19 +16,15 @@ interface AlbumSearchProps {
 const AlbumSearch = (props: AlbumSearchProps) => {
   const { isFocused, onChange, onFocusChange } = props;
   const [value, setValue] = useState("");
-  const [_, setPrevValue] = useState("");
+  const prevValue = useRef("");
   const inputRef = useRef<HTMLInputElement>();
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setPrevValue((prev) => {
-        if (value !== prev) {
-          onChange(value);
-          return value;
-        } else {
-          return prev;
-        }
-      });
+      if (value !== prevValue.current) {
+        onChange(value);
+        prevValue.current = value;
+      }
     }, 500);
     return () => {
       clearTimeout(timer);
