@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "../globals.css";
 import { Box, CssBaseline, Stack, ThemeProvider } from "@mui/material";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v14-appRouter";
-import theme from "@/theme";
+import { darkTheme as theme } from "@/theme";
 import Header from "@/layouts/Header";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -30,7 +30,11 @@ export default function RootLayout({
               gridTemplateRows={"auto 1fr"}
             >
               <Header></Header>
-              <Box component={"main"} minHeight={0}>
+              <Box
+                component={"main"}
+                minHeight={0}
+                className="overflow-x-hidden"
+              >
                 {children}
               </Box>
             </Stack>

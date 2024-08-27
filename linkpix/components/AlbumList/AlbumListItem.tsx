@@ -9,7 +9,7 @@ import {
   Grid,
   Typography,
 } from "@mui/material";
-import theme from "@/theme";
+import { darkTheme as theme } from "@/theme";
 
 interface AlbumListItemProps {
   name: string;

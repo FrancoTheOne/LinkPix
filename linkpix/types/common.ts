@@ -3,4 +3,9 @@ type PaginationParams = {
   limit: number;
 };
 
-export type { PaginationParams };
+type SortingParams = {
+  field: string;
+  sort: "asc" | "desc";
+};
+
+export type { PaginationParams, SortingParams };

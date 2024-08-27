@@ -2,10 +2,13 @@
 import AlbumList from "../../components/AlbumList/AlbumList";
 import { Container, Pagination, Stack, Tab, Tabs } from "@mui/material";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import useGetAlbumList from "@/services/album/useGetAlbumList";
+import useGetAlbumList, {
+  Album,
+  GetAlbumListRequest,
+} from "@/services/album/useGetAlbumList";
 import AlbumSearch from "@/components/AlbumSearch/AlbumSearch";
 import AlbumGrid from "@/components/AlbumGrid/AlbumGrid";
-import { PaginationParams } from "@/types/common";
+import { PaginationParams, SortingParams } from "@/types/common";
 
 enum HomeMode {
   "Browse",
@@ -18,12 +21,19 @@ const Home = () => {
     page: 0,
     limit: 20,
   });
+  const [sortingParams, setSortingParams] = useState<SortingParams>({
+    field: "id",
+    sort: "desc",
+  });
   const [searchText, setSearchText] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
 
-  const { data: albumList, setParams: setAlbumListParams } =
-    useGetAlbumList(paginationParams);
+  const { data: albumList, setParams: setAlbumListParams } = useGetAlbumList({
+    offset: paginationParams.page * paginationParams.limit,
+    limit: paginationParams.limit,
+    order: sortingParams.field,
+    direction: sortingParams.sort,
+  });
   const totalPage = useMemo(
     () => Math.floor(albumList.count / paginationParams.limit),
     [albumList.count, paginationParams.limit]
@@ -36,7 +46,7 @@ const Home = () => {
         setIsSearchFocused((prev) => !prev);
         return;
       }
-      if (isSearchFocused) {
+      if (mode === HomeMode.Edit || isSearchFocused) {
         return;
       }
 
@@ -62,6 +72,7 @@ const Home = () => {
     };
   }, [
     isSearchFocused,
+    mode,
     paginationParams.limit,
     paginationParams.page,
     totalPage,
@@ -77,9 +88,11 @@ const Home = () => {
     setAlbumListParams({
       offset: paginationParams.page * paginationParams.limit,
       limit: paginationParams.limit,
+      order: sortingParams.field,
+      direction: sortingParams.sort,
       ...(searchText && { search: searchText }),
     });
-  }, [paginationParams, searchText, setAlbumListParams]);
+  }, [paginationParams, searchText, setAlbumListParams, sortingParams]);
 
   const handleTabChange = useCallback((_: any, value: HomeMode) => {
     setMode(value);
@@ -88,6 +101,27 @@ const Home = () => {
   const handleSearchChange = useCallback((value: string) => {
     setSearchText(value);
     setPaginationParams((prev) => ({ page: 0, limit: prev.limit }));
+  }, []);
+
+  const handleSort = useCallback(
+    (field: string, sort: SortingParams["sort"]) => {
+      setSortingParams({ field, sort });
+    },
+    []
+  );
+
+  const handleAlbumEditSubmit = useCallback(async (album: Partial<Album>) => {
+    const { id, ...body } = album;
+    if (id === undefined) throw new Error("ID is missing in update payload");
+
+    const url = new URL(`/album/${id}`, process.env.NEXT_PUBLIC_SERVER_DOMAIN);
+    await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
   }, []);
 
   const handleSearchFocusChange = useCallback(
@@ -125,7 +159,16 @@ const Home = () => {
       {mode === HomeMode.Browse && (
         <AlbumList data={albumList.data} isKeyInterrupt={isSearchFocused} />
       )}
-      {mode === HomeMode.Edit && <AlbumGrid data={albumList.data} />}
+      {mode === HomeMode.Edit && (
+        <AlbumGrid
+          data={albumList.data}
+          rowCount={albumList.count}
+          paginationParams={paginationParams}
+          sortingParams={sortingParams}
+          onSort={handleSort}
+          onEditSubmit={handleAlbumEditSubmit}
+        />
+      )}
     </Container>
   );
 };

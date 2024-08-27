@@ -1,11 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 
-type GetAlbumListRequest = Partial<{
-  offset: number;
-  limit: number;
-  search: string;
-}>;
-
 type Album = {
   id: number;
   name: string;
@@ -14,6 +8,14 @@ type Album = {
   thumbnail: string;
   source: string;
 };
+
+type GetAlbumListRequest = Partial<{
+  offset: number;
+  limit: number;
+  search: string;
+  order: string;
+  direction: string;
+}>;
 
 type GetAlbumListResponse = {
   data: Album[];
@@ -69,4 +71,4 @@ const useGetAlbumList = (initParams: GetAlbumListRequest = {}) => {
 };
 
 export default useGetAlbumList;
-export type { Album, AlbumList };
+export type { Album, AlbumList, GetAlbumListRequest };

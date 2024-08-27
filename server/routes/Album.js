@@ -18,6 +18,9 @@ router.get("/list", async (req, res) => {
   const offset = parseInt(req.query?.offset) || 0;
   const limit = parseInt(req.query?.limit) || 20;
   const search = req.query.search;
+  const order = req.query.order || "id";
+  const direction = req.query.direction || "DESC";
+
   const { count, rows: data } = await Album.findAndCountAll({
     attributes: ["id", "name", "category", "author", "thumbnail", "source"],
     where: req.query.search
@@ -28,7 +31,10 @@ router.get("/list", async (req, res) => {
           ],
         }
       : {},
-    order: [["createdAt", "DESC"]],
+    order: [
+      [order, direction],
+      ["id", "DESC"],
+    ],
     offset,
     limit,
   });
@@ -41,6 +47,26 @@ router.get("/:id", async (req, res) => {
     attributes: ["data"],
   });
   res.json(album);
+});
+
+router.put("/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const album = await Album.findByPk(id);
+    if (!album) {
+      return res.status(404).json({ message: "Album not found" });
+    }
+    const result = await Album.update(req.body, { where: { id } });
+    // console.log(JSON.parse(req.body.data));
+    res.status(200).json({
+      message: "Album updated successfully",
+      data: result,
+      req: req.body.data,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 router.post("/", async (req, res) => {
