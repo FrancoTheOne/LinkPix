@@ -1,9 +1,9 @@
 "use client";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import AlbumListItem from "./AlbumListItem";
 import { Grid } from "@mui/material";
 import useBreakpoint from "@/hook/useBreakpoint";
-import { Album } from "@/services/album/useGetAlbumList";
+import { Album } from "@/types/album";
 
 const NUM_OF_COLUMN: Record<string, number> = {
   xs: 3,

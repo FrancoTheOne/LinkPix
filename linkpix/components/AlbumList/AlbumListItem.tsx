@@ -48,16 +48,6 @@ const AlbumListItem = (props: AlbumListItemProps) => {
             className="relative h-full flex flex-col justify-end"
             sx={{ p: 0 }}
           >
-            {/* <Image
-              src={`/image/thumbnails/${thumbnail}`}
-              alt={name}
-              fill
-              sizes="256px"
-              draggable={false}
-              className={`object-cover transition-all ${
-                isSelected && "scale-110"
-              }`}
-            /> */}
             {
               // eslint-disable-next-line @next/next/no-img-element
               <img

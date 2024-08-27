@@ -5,6 +5,7 @@ import { Box, CssBaseline, Stack, ThemeProvider } from "@mui/material";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v14-appRouter";
 import { darkTheme as theme } from "@/theme";
 import Header from "@/layouts/Header";
+import StoreProvider from "../StoreProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,23 +23,25 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AppRouterCacheProvider>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <Stack
-              display={"grid"}
-              height={"100%"}
-              gridTemplateRows={"auto 1fr"}
-            >
-              <Header></Header>
-              <Box
-                component={"main"}
-                minHeight={0}
-                className="overflow-x-hidden"
+          <StoreProvider>
+            <ThemeProvider theme={theme}>
+              <CssBaseline />
+              <Stack
+                display={"grid"}
+                height={"100%"}
+                gridTemplateRows={"auto 1fr"}
               >
-                {children}
-              </Box>
-            </Stack>
-          </ThemeProvider>
+                <Header></Header>
+                <Box
+                  component={"main"}
+                  minHeight={0}
+                  className="overflow-x-hidden"
+                >
+                  {children}
+                </Box>
+              </Stack>
+            </ThemeProvider>
+          </StoreProvider>
         </AppRouterCacheProvider>
       </body>
     </html>

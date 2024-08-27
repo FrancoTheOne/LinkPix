@@ -1,14 +1,12 @@
 "use client";
 import AlbumList from "../../components/AlbumList/AlbumList";
 import { Container, Pagination, Stack, Tab, Tabs } from "@mui/material";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import useGetAlbumList, {
-  Album,
-  GetAlbumListRequest,
-} from "@/services/album/useGetAlbumList";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AlbumSearch from "@/components/AlbumSearch/AlbumSearch";
 import AlbumGrid from "@/components/AlbumGrid/AlbumGrid";
 import { PaginationParams, SortingParams } from "@/types/common";
+import { useGetAlbumListQuery, useUpdateAlbumMutation } from "@/services/album";
+import { Album } from "@/types/album";
 
 enum HomeMode {
   "Browse",
@@ -28,16 +26,19 @@ const Home = () => {
   const [searchText, setSearchText] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
-  const { data: albumList, setParams: setAlbumListParams } = useGetAlbumList({
-    offset: paginationParams.page * paginationParams.limit,
-    limit: paginationParams.limit,
-    order: sortingParams.field,
-    direction: sortingParams.sort,
-  });
-  const totalPage = useMemo(
-    () => Math.floor(albumList.count / paginationParams.limit),
-    [albumList.count, paginationParams.limit]
-  );
+  const { data: albumList, isLoading: isAlbumListLoading } =
+    useGetAlbumListQuery({
+      offset: paginationParams.page * paginationParams.limit,
+      limit: paginationParams.limit,
+      order: sortingParams.field,
+      direction: sortingParams.sort,
+      search: searchText,
+    });
+  const [updateAlbum] = useUpdateAlbumMutation();
+
+  const totalPage = useMemo(() => {
+    return Math.floor((albumList?.count ?? 0) / paginationParams.limit);
+  }, [albumList?.count, paginationParams.limit]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -84,16 +85,6 @@ const Home = () => {
     []
   );
 
-  useEffect(() => {
-    setAlbumListParams({
-      offset: paginationParams.page * paginationParams.limit,
-      limit: paginationParams.limit,
-      order: sortingParams.field,
-      direction: sortingParams.sort,
-      ...(searchText && { search: searchText }),
-    });
-  }, [paginationParams, searchText, setAlbumListParams, sortingParams]);
-
   const handleTabChange = useCallback((_: any, value: HomeMode) => {
     setMode(value);
   }, []);
@@ -110,26 +101,23 @@ const Home = () => {
     []
   );
 
-  const handleAlbumEditSubmit = useCallback(async (album: Partial<Album>) => {
-    const { id, ...body } = album;
-    if (id === undefined) throw new Error("ID is missing in update payload");
-
-    const url = new URL(`/album/${id}`, process.env.NEXT_PUBLIC_SERVER_DOMAIN);
-    await fetch(url, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-  }, []);
+  const handleAlbumEditSubmit = useCallback(
+    async (album: Partial<Album> & Required<Pick<Album, "id">>) => {
+      try {
+        await updateAlbum(album);
+      } catch (err) {
+        console.log(err);
+      }
+    },
+    [updateAlbum]
+  );
 
   const handleSearchFocusChange = useCallback(
     (isFocused: boolean) => setIsSearchFocused(isFocused),
     []
   );
 
-  return (
+  return albumList !== undefined ? (
     <Container sx={{ py: 3 }} maxWidth="xl">
       <Stack
         mb={1}
@@ -170,6 +158,8 @@ const Home = () => {
         />
       )}
     </Container>
+  ) : (
+    <Container sx={{ py: 3 }} maxWidth="xl"></Container>
   );
 };
 

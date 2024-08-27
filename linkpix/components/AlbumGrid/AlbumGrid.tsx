@@ -1,16 +1,13 @@
-import { Album } from "@/services/album/useGetAlbumList";
 import { lightTheme } from "@/theme";
+import { Album } from "@/types/album";
 import { PaginationParams, SortingParams } from "@/types/common";
 import { ThemeProvider } from "@emotion/react";
 import { Box } from "@mui/material";
-import { idID } from "@mui/material/locale";
 import {
   DataGrid,
-  GridCallbackDetails,
   GridCellParams,
   GridColDef,
   GridSortModel,
-  MuiEvent,
   useGridApiRef,
 } from "@mui/x-data-grid";
 import React, { useCallback } from "react";
@@ -27,7 +24,9 @@ interface AlbumGridProps {
   paginationParams: PaginationParams;
   sortingParams: SortingParams;
   onSort: (field: string, sort: SortingParams["sort"]) => void;
-  onEditSubmit: (album: Partial<Album>) => Promise<void>;
+  onEditSubmit: (
+    album: Partial<Album> & Required<Pick<Album, "id">>
+  ) => Promise<void>;
 }
 
 const AlbumGrid = (props: AlbumGridProps) => {

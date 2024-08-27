@@ -49,7 +49,7 @@ router.get("/:id", async (req, res) => {
   res.json(album);
 });
 
-router.put("/:id", async (req, res) => {
+router.patch("/:id", async (req, res) => {
   const { id } = req.params;
   try {
     const album = await Album.findByPk(id);
