@@ -1,7 +1,19 @@
 "use client";
 import AlbumList from "../../components/AlbumList/AlbumList";
-import { Button, Container, Pagination, Stack, Tab, Tabs } from "@mui/material";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Button,
+  Container,
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Pagination,
+  Stack,
+  Tab,
+  Tabs,
+} from "@mui/material";
+import { MouseEvent, useCallback, useEffect, useMemo, useState } from "react";
 import AlbumSearch from "@/components/AlbumSearch/AlbumSearch";
 import AlbumGrid from "@/components/AlbumGrid/AlbumGrid";
 import { PaginationParams, SortingParams } from "@/types/common";
@@ -13,17 +25,31 @@ import {
 import { Album } from "@/types/album";
 import BasicDialog from "@/components/Diaolog/BasicDialog";
 import useDialog from "@/hook/useDialog";
+import {
+  KeyboardArrowDown,
+  KeyboardArrowUp,
+  SortRounded,
+  ViewComfy,
+} from "@mui/icons-material";
 
 enum HomeMode {
   "Browse",
   "Edit",
 }
 
+const ALBUM_COLUMN = [
+  { field: "id", name: "ID" },
+  { field: "name", name: "Name" },
+  { field: "author", name: "Author" },
+];
+
+const PAGINATION_LIMIT = [14, 21, 28];
+
 const Home = () => {
   const [mode, setMode] = useState<HomeMode>(HomeMode.Browse);
   const [paginationParams, setPaginationParams] = useState<PaginationParams>({
     page: 0,
-    limit: 20,
+    limit: PAGINATION_LIMIT[1],
   });
   const [sortingParams, setSortingParams] = useState<SortingParams>({
     field: "id",
@@ -31,6 +57,14 @@ const Home = () => {
   });
   const [searchText, setSearchText] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
+  const isSortMenuOpen = Boolean(sortMenuAnchor);
+  const [limitMenuAnchor, setLimitMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
+  const isLimitMenuOpen = Boolean(limitMenuAnchor);
   const [isAlbumEditing, setIsAlbumEditing] = useState(false);
 
   const { data: albumList, isLoading: isAlbumListLoading } =
@@ -114,6 +148,44 @@ const Home = () => {
     []
   );
 
+  const handleSortMenuOpen = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) =>
+      setSortMenuAnchor(event.currentTarget),
+    []
+  );
+
+  const handleSortMenuClose = useCallback(() => setSortMenuAnchor(null), []);
+
+  const handleSortMenuItemClick = useCallback(
+    (field: string) => {
+      setSortingParams((prev) => ({
+        field,
+        sort: field !== prev.field || prev.sort === "desc" ? "asc" : "desc",
+      }));
+      handleSortMenuClose();
+    },
+    [handleSortMenuClose]
+  );
+
+  const handleLimitMenuOpen = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) =>
+      setLimitMenuAnchor(event.currentTarget),
+    []
+  );
+
+  const handleLimitMenuClose = useCallback(() => setLimitMenuAnchor(null), []);
+
+  const handleLimitMenuItemClick = useCallback(
+    (limit: number) => {
+      setPaginationParams({
+        page: 0,
+        limit,
+      });
+      handleLimitMenuClose();
+    },
+    [handleLimitMenuClose]
+  );
+
   const handleAlbumEditToggle = useCallback(
     (isEditing: boolean) => setIsAlbumEditing(isEditing),
     []
@@ -185,13 +257,84 @@ const Home = () => {
             mb={1}
             direction={"row"}
             justifyContent={"space-between"}
-            alignItems={"end"}
+            alignItems={"center"}
           >
-            <AlbumSearch
-              isFocused={isSearchFocused}
-              onFocusChange={handleSearchFocusChange}
-              onChange={handleSearchChange}
-            ></AlbumSearch>
+            <Stack
+              direction={"row"}
+              gap={1}
+              position={"relative"}
+              alignItems={"center"}
+            >
+              <AlbumSearch
+                isFocused={isSearchFocused}
+                onFocusChange={handleSearchFocusChange}
+                onChange={handleSearchChange}
+              ></AlbumSearch>
+              <IconButton
+                id="search-menu-button"
+                aria-controls={isSortMenuOpen ? "search-menu" : undefined}
+                aria-haspopup="true"
+                aria-expanded={isSortMenuOpen ? "true" : undefined}
+                onClick={handleSortMenuOpen}
+              >
+                <SortRounded></SortRounded>
+              </IconButton>
+              <Menu
+                id="search-menu"
+                open={isSortMenuOpen}
+                anchorEl={sortMenuAnchor}
+                onClose={handleSortMenuClose}
+                MenuListProps={{
+                  "aria-labelledby": "search-menu",
+                }}
+              >
+                {ALBUM_COLUMN.map((column) => (
+                  <MenuItem
+                    key={column.field}
+                    selected={column.field === sortingParams.field}
+                    onClick={() => handleSortMenuItemClick(column.field)}
+                  >
+                    <ListItemText>{column.name}</ListItemText>
+                    <ListItemIcon sx={{ justifyContent: "end" }}>
+                      {column.field === sortingParams.field &&
+                        (sortingParams.sort === "asc" ? (
+                          <KeyboardArrowUp />
+                        ) : (
+                          <KeyboardArrowDown />
+                        ))}
+                    </ListItemIcon>
+                  </MenuItem>
+                ))}
+              </Menu>
+              <IconButton
+                id="limit-menu-button"
+                aria-controls={isLimitMenuOpen ? "limit-menu" : undefined}
+                aria-haspopup="true"
+                aria-expanded={isLimitMenuOpen ? "true" : undefined}
+                onClick={handleLimitMenuOpen}
+              >
+                <ViewComfy />
+              </IconButton>
+              <Menu
+                id="limit-menu"
+                open={isLimitMenuOpen}
+                anchorEl={limitMenuAnchor}
+                onClose={handleLimitMenuClose}
+                MenuListProps={{
+                  "aria-labelledby": "limit-menu",
+                }}
+              >
+                {PAGINATION_LIMIT.map((limit) => (
+                  <MenuItem
+                    key={limit}
+                    selected={limit === paginationParams.limit}
+                    onClick={() => handleLimitMenuItemClick(limit)}
+                  >
+                    <ListItemText>{limit}</ListItemText>
+                  </MenuItem>
+                ))}
+              </Menu>
+            </Stack>
             <Pagination
               page={paginationParams.page + 1}
               count={Math.ceil(albumList.count / paginationParams.limit)}
