@@ -1,6 +1,6 @@
 "use client";
 import AlbumList from "../../components/AlbumList/AlbumList";
-import { Container, Pagination, Stack, Tab, Tabs } from "@mui/material";
+import { Button, Container, Pagination, Stack, Tab, Tabs } from "@mui/material";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AlbumSearch from "@/components/AlbumSearch/AlbumSearch";
 import AlbumGrid from "@/components/AlbumGrid/AlbumGrid";
@@ -11,6 +11,8 @@ import {
   useUpdateAlbumMutation,
 } from "@/services/album";
 import { Album } from "@/types/album";
+import BasicDialog from "@/components/Diaolog/BasicDialog";
+import useDialog from "@/hook/useDialog";
 
 enum HomeMode {
   "Browse",
@@ -39,8 +41,12 @@ const Home = () => {
       direction: sortingParams.sort,
       search: searchText,
     });
-  const [updateAlbum] = useUpdateAlbumMutation();
+  const [updateAlbum] = useUpdateAlbumMutation({
+    fixedCacheKey: "update-album",
+  });
   const [deleteAlbum] = useDeleteAlbumMutation();
+
+  const { dialogData, setDialogData, openDialog } = useDialog();
 
   const totalPage = useMemo(() => {
     return Math.floor((albumList?.count ?? 0) / paginationParams.limit);
@@ -124,6 +130,24 @@ const Home = () => {
     [updateAlbum]
   );
 
+  const handleAlbumEditRequest = useCallback(
+    (
+      album: Partial<Album> & Required<Pick<Album, "id">>,
+      prev: Partial<Album>
+    ) => {
+      const changeList = Object.entries(prev).map(
+        ([key, value]) => `${key} from ${value} to ${album[key as keyof Album]}`
+      );
+      setDialogData({
+        title: "Confirmation",
+        content: changeList.join("\n"),
+        onConfirm: () => handleAlbumEditSubmit(album),
+      });
+      openDialog();
+    },
+    [handleAlbumEditSubmit, openDialog, setDialogData]
+  );
+
   const handleAlbumDelete = useCallback(
     async (id: number) => {
       try {
@@ -135,56 +159,69 @@ const Home = () => {
     [deleteAlbum]
   );
 
+  const handleAlbumDeleteRequest = useCallback(
+    (id: number, displayName: string) => {
+      setDialogData({
+        title: "Confirmation",
+        content: `Delete ${displayName}?`,
+        onConfirm: () => handleAlbumDelete(id),
+      });
+      openDialog();
+    },
+    [handleAlbumDelete, openDialog, setDialogData]
+  );
+
   const handleSearchFocusChange = useCallback(
     (isFocused: boolean) => setIsSearchFocused(isFocused),
     []
   );
 
-  return albumList !== undefined ? (
-    <Container sx={{ py: 3 }} maxWidth="xl">
-      <Stack
-        mb={1}
-        direction={"row"}
-        justifyContent={"space-between"}
-        alignItems={"end"}
-      >
-        <AlbumSearch
-          isFocused={isSearchFocused}
-          onFocusChange={handleSearchFocusChange}
-          onChange={handleSearchChange}
-        ></AlbumSearch>
-        <Pagination
-          page={paginationParams.page + 1}
-          count={Math.ceil(albumList.count / paginationParams.limit)}
-          onChange={handlePageChange}
-        ></Pagination>
-        <Tabs
-          value={mode}
-          onChange={handleTabChange}
-          aria-label="basic tabs example"
-        >
-          <Tab label="Browse" value={HomeMode.Browse} />
-          <Tab label="Edit" value={HomeMode.Edit} />
-        </Tabs>
-      </Stack>
-      {mode === HomeMode.Browse && (
-        <AlbumList data={albumList.data} isKeyInterrupt={isSearchFocused} />
+  return (
+    <>
+      <BasicDialog {...dialogData} />
+      {albumList !== undefined ? (
+        <Container sx={{ py: 3 }} maxWidth="xl">
+          <Stack
+            mb={1}
+            direction={"row"}
+            justifyContent={"space-between"}
+            alignItems={"end"}
+          >
+            <AlbumSearch
+              isFocused={isSearchFocused}
+              onFocusChange={handleSearchFocusChange}
+              onChange={handleSearchChange}
+            ></AlbumSearch>
+            <Pagination
+              page={paginationParams.page + 1}
+              count={Math.ceil(albumList.count / paginationParams.limit)}
+              onChange={handlePageChange}
+            ></Pagination>
+            <Tabs value={mode} onChange={handleTabChange}>
+              <Tab label="Browse" value={HomeMode.Browse} />
+              <Tab label="Edit" value={HomeMode.Edit} />
+            </Tabs>
+          </Stack>
+          {mode === HomeMode.Browse && (
+            <AlbumList data={albumList.data} isKeyInterrupt={isSearchFocused} />
+          )}
+          {mode === HomeMode.Edit && (
+            <AlbumGrid
+              data={albumList.data}
+              rowCount={albumList.count}
+              paginationParams={paginationParams}
+              sortingParams={sortingParams}
+              onSort={handleSort}
+              onEditToggle={handleAlbumEditToggle}
+              onEditSubmit={handleAlbumEditRequest}
+              onDelete={handleAlbumDeleteRequest}
+            />
+          )}
+        </Container>
+      ) : (
+        <Container sx={{ py: 3 }} maxWidth="xl"></Container>
       )}
-      {mode === HomeMode.Edit && (
-        <AlbumGrid
-          data={albumList.data}
-          rowCount={albumList.count}
-          paginationParams={paginationParams}
-          sortingParams={sortingParams}
-          onSort={handleSort}
-          onEditToggle={handleAlbumEditToggle}
-          onEditSubmit={handleAlbumEditSubmit}
-          onDelete={handleAlbumDelete}
-        />
-      )}
-    </Container>
-  ) : (
-    <Container sx={{ py: 3 }} maxWidth="xl"></Container>
+    </>
   );
 };
 

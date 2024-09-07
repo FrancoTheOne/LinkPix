@@ -2,10 +2,9 @@ import { lightTheme } from "@/theme";
 import { Album } from "@/types/album";
 import { PaginationParams, SortingParams } from "@/types/common";
 import { ThemeProvider } from "@emotion/react";
-import { Box, Button, IconButton } from "@mui/material";
+import { Box, IconButton } from "@mui/material";
 import {
   DataGrid,
-  GridCellParams,
   GridColDef,
   GridRenderCellParams,
   GridSortModel,
@@ -22,9 +21,10 @@ interface AlbumGridProps {
   onSort: (field: string, sort: SortingParams["sort"]) => void;
   onEditToggle: (isEditing: boolean) => void;
   onEditSubmit: (
-    album: Partial<Album> & Required<Pick<Album, "id">>
-  ) => Promise<void>;
-  onDelete: (id: number) => void;
+    album: Partial<Album> & Required<Pick<Album, "id">>,
+    prev: Partial<Album>
+  ) => void;
+  onDelete: (id: number, displayName: string) => void;
 }
 
 const AlbumGrid = (props: AlbumGridProps) => {
@@ -49,25 +49,6 @@ const AlbumGrid = (props: AlbumGridProps) => {
     [onSort]
   );
 
-  const handleCellClick = useCallback(
-    (params: GridCellParams) => {
-      if (params.field === "action") {
-        return;
-      }
-      if (
-        apiRef.current &&
-        apiRef.current.getCellMode(params.id, params.field) === "view"
-      ) {
-        apiRef.current.startCellEditMode({
-          id: params.id,
-          field: params.field,
-        });
-        onEditToggle(true);
-      }
-    },
-    [apiRef, onEditToggle]
-  );
-
   const handleCellEditStop = useCallback(() => {
     onEditToggle(false);
   }, [onEditToggle]);
@@ -84,26 +65,28 @@ const AlbumGrid = (props: AlbumGridProps) => {
         ])
         .filter(([key, value]) => oldRow[key as string] !== value);
       if (updateData.length) {
-        try {
-          await onEditSubmit({
+        onEditSubmit(
+          {
             id: Number(newRow.id),
             ...Object.fromEntries(updateData),
-          });
-        } catch (err) {
-          console.log(err);
-          return oldRow;
-        }
-        return newRow;
-      } else {
-        return oldRow;
+          },
+          Object.fromEntries(
+            updateData.map(([key]) => [key, oldRow[key as string]])
+          )
+        );
       }
+      return oldRow;
     },
     [onEditSubmit]
   );
 
   const handleRowDelete = useCallback(
     (params: GridRenderCellParams) => {
-      onDelete(+params.id.valueOf());
+      console.log();
+      onDelete(
+        +params.id.valueOf(),
+        `${params.row?.author} - ${params.row?.name}`
+      );
     },
     [onDelete]
   );
@@ -150,7 +133,6 @@ const AlbumGrid = (props: AlbumGridProps) => {
             pageSize: paginationParams.limit,
           }}
           sortModel={[sortingParams]}
-          onCellClick={handleCellClick}
           onCellEditStop={handleCellEditStop}
           onSortModelChange={handleSortModelChange}
           processRowUpdate={handleProcessRowUpdate}

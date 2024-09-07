@@ -68,36 +68,6 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
-  try {
-    const album = await Album.findOne({
-      where: { source: req.body.source },
-    });
-    if (album) {
-      res.status(409).json({ message: "Album already saved!" });
-      return;
-    }
-    const data = JSON.parse(req.body.data);
-    if (!data || !data.length) return;
-    const fileName = `${new Date().getTime()}.webp`;
-
-    saveCropImage(data[0], path.join(thumbnailFolder, fileName), 256, 256);
-    const title = zhConverter(req.body.title);
-    const payload = {
-      name: title,
-      category: req.body.category,
-      author: title,
-      source: req.body.source,
-      thumbnail: fileName,
-      data: JSON.stringify(prefixReducer(JSON.parse(req.body.data))),
-    };
-    await Album.create(payload);
-    res.json(payload);
-  } catch (err) {
-    console.log(err);
-  }
-});
-
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
   const album = await Album.findOne({
@@ -112,6 +82,46 @@ router.delete("/:id", async (req, res) => {
     where: { id },
   });
   res.json(result);
+});
+
+router.put("/", async (req, res) => {
+  try {
+    const album = await Album.findOne({
+      where: { source: req.body.source },
+    });
+    const data = JSON.parse(req.body.data);
+    if (!data || !data.length) return;
+
+    const thumbnailUrl = data[req.body.currentIndex] ?? data[0];
+
+    if (album) {
+      saveCropImage(
+        thumbnailUrl,
+        path.join(thumbnailFolder, album.thumbnail),
+        256,
+        256
+      );
+      res.json({ message: "Album thumbnail updated" });
+      return;
+    }
+
+    const fileName = `${new Date().getTime()}.webp`;
+
+    saveCropImage(thumbnailUrl, path.join(thumbnailFolder, fileName), 256, 256);
+    const title = zhConverter(req.body.title);
+    const payload = {
+      name: title,
+      category: req.body.category,
+      author: title,
+      source: req.body.source,
+      thumbnail: fileName,
+      data: JSON.stringify(prefixReducer(JSON.parse(req.body.data))),
+    };
+    await Album.create(payload);
+    res.status(201).json({ message: "Saved" });
+  } catch (err) {
+    console.log(err);
+  }
 });
 
 module.exports = router;
