@@ -27,11 +27,11 @@ const AlbumListItem = (props: AlbumListItemProps) => {
   const cardRef = useRef<HTMLAnchorElement>(null);
 
   // TODO: scrollIntoView
-  // useEffect(() => {
-  //   if (isSelected && cardRef.current) {
-  //     cardRef.current.scrollIntoView({ behavior: "smooth" });
-  //   }
-  // }, [isSelected]);
+  useEffect(() => {
+    if (isSelected && cardRef.current) {
+      cardRef.current.focus();
+    }
+  }, [isSelected]);
 
   return (
     <Grid item xs={1} maxHeight={256} sx={{ aspectRatio: 3 / 4 }}>

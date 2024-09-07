@@ -57,7 +57,6 @@ router.patch("/:id", async (req, res) => {
       return res.status(404).json({ message: "Album not found" });
     }
     const result = await Album.update(req.body, { where: { id } });
-    // console.log(JSON.parse(req.body.data));
     res.status(200).json({
       message: "Album updated successfully",
       data: result,
@@ -71,6 +70,13 @@ router.patch("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
+    const album = await Album.findOne({
+      where: { source: req.body.source },
+    });
+    if (album) {
+      res.status(409).json({ message: "Album already saved!" });
+      return;
+    }
     const data = JSON.parse(req.body.data);
     if (!data || !data.length) return;
     const fileName = `${new Date().getTime()}.webp`;
@@ -90,6 +96,22 @@ router.post("/", async (req, res) => {
   } catch (err) {
     console.log(err);
   }
+});
+
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+  const album = await Album.findOne({
+    where: { id },
+    attributes: ["data"],
+  });
+  if (!album) {
+    res.status(409).json({ message: "Album not found!" });
+    return;
+  }
+  const result = await Album.destroy({
+    where: { id },
+  });
+  res.json(result);
 });
 
 module.exports = router;

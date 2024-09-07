@@ -2,21 +2,17 @@ import { lightTheme } from "@/theme";
 import { Album } from "@/types/album";
 import { PaginationParams, SortingParams } from "@/types/common";
 import { ThemeProvider } from "@emotion/react";
-import { Box } from "@mui/material";
+import { Box, Button, IconButton } from "@mui/material";
 import {
   DataGrid,
   GridCellParams,
   GridColDef,
+  GridRenderCellParams,
   GridSortModel,
   useGridApiRef,
 } from "@mui/x-data-grid";
-import React, { useCallback } from "react";
-
-const columns: GridColDef[] = [
-  { field: "id", headerName: "ID", width: 70 },
-  { field: "author", headerName: "Author", flex: 1, editable: true },
-  { field: "name", headerName: "Name", flex: 1, editable: true },
-];
+import React, { useCallback, useMemo } from "react";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 interface AlbumGridProps {
   data: Album[];
@@ -24,9 +20,11 @@ interface AlbumGridProps {
   paginationParams: PaginationParams;
   sortingParams: SortingParams;
   onSort: (field: string, sort: SortingParams["sort"]) => void;
+  onEditToggle: (isEditing: boolean) => void;
   onEditSubmit: (
     album: Partial<Album> & Required<Pick<Album, "id">>
   ) => Promise<void>;
+  onDelete: (id: number) => void;
 }
 
 const AlbumGrid = (props: AlbumGridProps) => {
@@ -36,7 +34,9 @@ const AlbumGrid = (props: AlbumGridProps) => {
     paginationParams,
     sortingParams,
     onSort,
+    onEditToggle,
     onEditSubmit,
+    onDelete,
   } = props;
   const apiRef = useGridApiRef();
 
@@ -51,6 +51,9 @@ const AlbumGrid = (props: AlbumGridProps) => {
 
   const handleCellClick = useCallback(
     (params: GridCellParams) => {
+      if (params.field === "action") {
+        return;
+      }
       if (
         apiRef.current &&
         apiRef.current.getCellMode(params.id, params.field) === "view"
@@ -59,10 +62,15 @@ const AlbumGrid = (props: AlbumGridProps) => {
           id: params.id,
           field: params.field,
         });
+        onEditToggle(true);
       }
     },
-    [apiRef]
+    [apiRef, onEditToggle]
   );
+
+  const handleCellEditStop = useCallback(() => {
+    onEditToggle(false);
+  }, [onEditToggle]);
 
   const handleProcessRowUpdate = useCallback(
     async (
@@ -93,6 +101,34 @@ const AlbumGrid = (props: AlbumGridProps) => {
     [onEditSubmit]
   );
 
+  const handleRowDelete = useCallback(
+    (params: GridRenderCellParams) => {
+      onDelete(+params.id.valueOf());
+    },
+    [onDelete]
+  );
+
+  const columns: GridColDef[] = useMemo(
+    () => [
+      { field: "id", headerName: "ID", width: 70 },
+      { field: "author", headerName: "Author", flex: 1, editable: true },
+      { field: "name", headerName: "Name", flex: 1, editable: true },
+      {
+        field: "action",
+        headerName: "Action",
+        sortable: false,
+        filterable: false,
+        display: "flex",
+        renderCell: (params) => (
+          <IconButton onClick={() => handleRowDelete(params)}>
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        ),
+      },
+    ],
+    [handleRowDelete]
+  );
+
   return (
     <ThemeProvider theme={lightTheme}>
       <Box bgcolor="grey.100" borderRadius={1}>
@@ -115,6 +151,7 @@ const AlbumGrid = (props: AlbumGridProps) => {
           }}
           sortModel={[sortingParams]}
           onCellClick={handleCellClick}
+          onCellEditStop={handleCellEditStop}
           onSortModelChange={handleSortModelChange}
           processRowUpdate={handleProcessRowUpdate}
         />

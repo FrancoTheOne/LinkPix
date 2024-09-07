@@ -5,7 +5,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import AlbumSearch from "@/components/AlbumSearch/AlbumSearch";
 import AlbumGrid from "@/components/AlbumGrid/AlbumGrid";
 import { PaginationParams, SortingParams } from "@/types/common";
-import { useGetAlbumListQuery, useUpdateAlbumMutation } from "@/services/album";
+import {
+  useDeleteAlbumMutation,
+  useGetAlbumListQuery,
+  useUpdateAlbumMutation,
+} from "@/services/album";
 import { Album } from "@/types/album";
 
 enum HomeMode {
@@ -25,6 +29,7 @@ const Home = () => {
   });
   const [searchText, setSearchText] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isAlbumEditing, setIsAlbumEditing] = useState(false);
 
   const { data: albumList, isLoading: isAlbumListLoading } =
     useGetAlbumListQuery({
@@ -35,6 +40,7 @@ const Home = () => {
       search: searchText,
     });
   const [updateAlbum] = useUpdateAlbumMutation();
+  const [deleteAlbum] = useDeleteAlbumMutation();
 
   const totalPage = useMemo(() => {
     return Math.floor((albumList?.count ?? 0) / paginationParams.limit);
@@ -47,7 +53,7 @@ const Home = () => {
         setIsSearchFocused((prev) => !prev);
         return;
       }
-      if (mode === HomeMode.Edit || isSearchFocused) {
+      if (isSearchFocused || isAlbumEditing) {
         return;
       }
 
@@ -72,6 +78,7 @@ const Home = () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [
+    isAlbumEditing,
     isSearchFocused,
     mode,
     paginationParams.limit,
@@ -101,6 +108,11 @@ const Home = () => {
     []
   );
 
+  const handleAlbumEditToggle = useCallback(
+    (isEditing: boolean) => setIsAlbumEditing(isEditing),
+    []
+  );
+
   const handleAlbumEditSubmit = useCallback(
     async (album: Partial<Album> & Required<Pick<Album, "id">>) => {
       try {
@@ -110,6 +122,17 @@ const Home = () => {
       }
     },
     [updateAlbum]
+  );
+
+  const handleAlbumDelete = useCallback(
+    async (id: number) => {
+      try {
+        await deleteAlbum(id);
+      } catch (err) {
+        console.log(err);
+      }
+    },
+    [deleteAlbum]
   );
 
   const handleSearchFocusChange = useCallback(
@@ -154,7 +177,9 @@ const Home = () => {
           paginationParams={paginationParams}
           sortingParams={sortingParams}
           onSort={handleSort}
+          onEditToggle={handleAlbumEditToggle}
           onEditSubmit={handleAlbumEditSubmit}
+          onDelete={handleAlbumDelete}
         />
       )}
     </Container>
