@@ -12,6 +12,7 @@ import {
   Stack,
   Tab,
   Tabs,
+  Tooltip,
 } from "@mui/material";
 import { MouseEvent, useCallback, useEffect, useMemo, useState } from "react";
 import AlbumSearch from "@/components/AlbumSearch/AlbumSearch";
@@ -31,6 +32,7 @@ import {
   SortRounded,
   ViewComfy,
 } from "@mui/icons-material";
+import { darkTheme as theme } from "@/theme";
 
 enum HomeMode {
   "Browse",
@@ -38,6 +40,8 @@ enum HomeMode {
 }
 
 const ALBUM_COLUMN = [
+  { field: "lastViewAt", name: "Last Viewed" },
+  { field: "rating", name: "Rating" },
   { field: "id", name: "ID" },
   { field: "name", name: "Name" },
   { field: "author", name: "Author" },
@@ -52,7 +56,7 @@ const Home = () => {
     limit: PAGINATION_LIMIT[1],
   });
   const [sortingParams, setSortingParams] = useState<SortingParams>({
-    field: "id",
+    field: ALBUM_COLUMN[0].field,
     sort: "desc",
   });
   const [searchText, setSearchText] = useState("");
@@ -157,10 +161,12 @@ const Home = () => {
   const handleSortMenuClose = useCallback(() => setSortMenuAnchor(null), []);
 
   const handleSortMenuItemClick = useCallback(
-    (field: string) => {
+    (field: string, sort?: "asc" | "desc") => {
       setSortingParams((prev) => ({
         field,
-        sort: field !== prev.field || prev.sort === "desc" ? "asc" : "desc",
+        sort:
+          sort ??
+          (field !== prev.field || prev.sort === "desc" ? "asc" : "desc"),
       }));
       handleSortMenuClose();
     },
@@ -186,6 +192,19 @@ const Home = () => {
     [handleLimitMenuClose]
   );
 
+  const handleAlbumClick = useCallback(
+    (index: number) => {
+      if (albumList) {
+        window.open(albumList.data[index].source, "_blank");
+        updateAlbum({
+          id: albumList.data[index].id,
+          lastViewAt: new Date().toISOString(),
+        });
+      }
+    },
+    [albumList, updateAlbum]
+  );
+
   const handleAlbumEditToggle = useCallback(
     (isEditing: boolean) => setIsAlbumEditing(isEditing),
     []
@@ -208,7 +227,7 @@ const Home = () => {
       prev: Partial<Album>
     ) => {
       const changeList = Object.entries(prev).map(
-        ([key, value]) => `${key} from ${value} to ${album[key as keyof Album]}`
+        ([key, value]) => `${key}:\n${value} ⇒ ${album[key as keyof Album]}`
       );
       setDialogData({
         title: "Confirmation",
@@ -218,6 +237,18 @@ const Home = () => {
       openDialog();
     },
     [handleAlbumEditSubmit, openDialog, setDialogData]
+  );
+
+  const handleAlbumRatingChange = useCallback(
+    (index: number, rating: number) => {
+      if (albumList) {
+        updateAlbum({
+          id: albumList.data[index].id,
+          rating,
+        });
+      }
+    },
+    [albumList, updateAlbum]
   );
 
   const handleAlbumDelete = useCallback(
@@ -270,51 +301,89 @@ const Home = () => {
                 onFocusChange={handleSearchFocusChange}
                 onChange={handleSearchChange}
               ></AlbumSearch>
-              <IconButton
-                id="search-menu-button"
-                aria-controls={isSortMenuOpen ? "search-menu" : undefined}
-                aria-haspopup="true"
-                aria-expanded={isSortMenuOpen ? "true" : undefined}
-                onClick={handleSortMenuOpen}
-              >
-                <SortRounded></SortRounded>
-              </IconButton>
+              <Tooltip title="Sort" placement="top">
+                <IconButton
+                  id="sort-menu-button"
+                  aria-controls={isSortMenuOpen ? "sort-menu" : undefined}
+                  aria-haspopup="true"
+                  aria-expanded={isSortMenuOpen ? "true" : undefined}
+                  onClick={handleSortMenuOpen}
+                >
+                  <SortRounded></SortRounded>
+                </IconButton>
+              </Tooltip>
               <Menu
-                id="search-menu"
+                id="sort-menu"
                 open={isSortMenuOpen}
                 anchorEl={sortMenuAnchor}
                 onClose={handleSortMenuClose}
                 MenuListProps={{
-                  "aria-labelledby": "search-menu",
+                  "aria-labelledby": "sort-menu",
                 }}
               >
                 {ALBUM_COLUMN.map((column) => (
                   <MenuItem
                     key={column.field}
                     selected={column.field === sortingParams.field}
-                    onClick={() => handleSortMenuItemClick(column.field)}
+                    // onClick={() => handleSortMenuItemClick(column.field)}
                   >
                     <ListItemText>{column.name}</ListItemText>
-                    <ListItemIcon sx={{ justifyContent: "end" }}>
-                      {column.field === sortingParams.field &&
+                    <ListItemIcon
+                      sx={{
+                        pl: 2,
+                        justifyContent: "end",
+                        alignItems: "center",
+                      }}
+                    >
+                      <IconButton
+                        size="small"
+                        sx={{
+                          ...(column.field === sortingParams.field &&
+                            sortingParams.sort === "asc" && {
+                              backgroundColor: `${theme.palette.grey[600]} !important`,
+                            }),
+                        }}
+                        onClick={() =>
+                          handleSortMenuItemClick(column.field, "asc")
+                        }
+                      >
+                        <KeyboardArrowUp />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        sx={{
+                          ...(column.field === sortingParams.field &&
+                            sortingParams.sort === "desc" && {
+                              backgroundColor: `${theme.palette.grey[600]} !important`,
+                            }),
+                        }}
+                        onClick={() =>
+                          handleSortMenuItemClick(column.field, "desc")
+                        }
+                      >
+                        <KeyboardArrowDown />
+                      </IconButton>
+                      {/* {column.field === sortingParams.field &&
                         (sortingParams.sort === "asc" ? (
                           <KeyboardArrowUp />
                         ) : (
                           <KeyboardArrowDown />
-                        ))}
+                        ))} */}
                     </ListItemIcon>
                   </MenuItem>
                 ))}
               </Menu>
-              <IconButton
-                id="limit-menu-button"
-                aria-controls={isLimitMenuOpen ? "limit-menu" : undefined}
-                aria-haspopup="true"
-                aria-expanded={isLimitMenuOpen ? "true" : undefined}
-                onClick={handleLimitMenuOpen}
-              >
-                <ViewComfy />
-              </IconButton>
+              <Tooltip title="Pagination Limit" placement="top">
+                <IconButton
+                  id="limit-menu-button"
+                  aria-controls={isLimitMenuOpen ? "limit-menu" : undefined}
+                  aria-haspopup="true"
+                  aria-expanded={isLimitMenuOpen ? "true" : undefined}
+                  onClick={handleLimitMenuOpen}
+                >
+                  <ViewComfy />
+                </IconButton>
+              </Tooltip>
               <Menu
                 id="limit-menu"
                 open={isLimitMenuOpen}
@@ -346,7 +415,12 @@ const Home = () => {
             </Tabs>
           </Stack>
           {mode === HomeMode.Browse && (
-            <AlbumList data={albumList.data} isKeyInterrupt={isSearchFocused} />
+            <AlbumList
+              data={albumList.data}
+              isKeyInterrupt={isSearchFocused}
+              onAlbumClick={handleAlbumClick}
+              onAlbumRatingChange={handleAlbumRatingChange}
+            />
           )}
           {mode === HomeMode.Edit && (
             <AlbumGrid
@@ -357,6 +431,7 @@ const Home = () => {
               onSort={handleSort}
               onEditToggle={handleAlbumEditToggle}
               onEditSubmit={handleAlbumEditRequest}
+              onAlbumRatingChange={handleAlbumRatingChange}
               onDelete={handleAlbumDeleteRequest}
             />
           )}

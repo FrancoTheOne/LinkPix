@@ -7,6 +7,7 @@ const { Album } = require("../models");
 const prefixReducer = require("../utils/prefixReducer");
 const saveCropImage = require("../utils/saveCropImage");
 const { Op } = require("sequelize");
+const { unlink } = require("fs");
 
 const zhConverter = OpenCC.Converter({ from: "cn", to: "hk" });
 const thumbnailFolder = path.join(
@@ -22,7 +23,16 @@ router.get("/list", async (req, res) => {
   const direction = req.query.direction || "DESC";
 
   const { count, rows: data } = await Album.findAndCountAll({
-    attributes: ["id", "name", "category", "author", "thumbnail", "source"],
+    attributes: [
+      "id",
+      "name",
+      "category",
+      "author",
+      "thumbnail",
+      "source",
+      "rating",
+      "lastViewAt",
+    ],
     where: req.query.search
       ? {
           [Op.or]: [
@@ -72,12 +82,15 @@ router.delete("/:id", async (req, res) => {
   const { id } = req.params;
   const album = await Album.findOne({
     where: { id },
-    attributes: ["data"],
+    attributes: ["thumbnail"],
   });
   if (!album) {
     res.status(409).json({ message: "Album not found!" });
     return;
   }
+  unlink(path.join(thumbnailFolder, album.thumbnail), (err) => {
+    console.log(`${album.thumbnail} is not found`);
+  });
   const result = await Album.destroy({
     where: { id },
   });

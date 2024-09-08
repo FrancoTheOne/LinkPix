@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import AlbumListItem from "./AlbumListItem";
 import { Grid } from "@mui/material";
 import useBreakpoint from "@/hook/useBreakpoint";
@@ -16,16 +16,28 @@ const NUM_OF_COLUMN: Record<string, number> = {
 interface AlbumListProps {
   data: Album[];
   isKeyInterrupt: boolean;
+  onAlbumClick: (index: number) => void;
+  onAlbumRatingChange: (index: number, rating: number) => void;
 }
 
 const AlbumList = (props: AlbumListProps) => {
-  const { data, isKeyInterrupt } = props;
+  const { data, isKeyInterrupt, onAlbumClick, onAlbumRatingChange } = props;
   const [selectIndex, setSelectIndex] = useState(0);
   const { breakPointName } = useBreakpoint();
 
   useEffect(() => {
-    setSelectIndex(0);
+    setSelectIndex((prev) => (prev >= data.length ? 0 : prev));
   }, [data]);
+
+  const handleRatingKeydown = useCallback(
+    (rating: number) => {
+      onAlbumRatingChange(
+        selectIndex,
+        data[selectIndex].rating === rating ? 0 : rating
+      );
+    },
+    [data, onAlbumRatingChange, selectIndex]
+  );
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -72,7 +84,26 @@ const AlbumList = (props: AlbumListProps) => {
           });
           break;
         case "KeyC":
-          window.open(data[selectIndex].source, "_blank");
+          onAlbumClick(selectIndex);
+          break;
+        case "Digit0":
+          handleRatingKeydown(0);
+          break;
+        case "Digit1":
+          handleRatingKeydown(1);
+          break;
+        case "Digit2":
+          handleRatingKeydown(2);
+          break;
+        case "Digit3":
+          handleRatingKeydown(3);
+          break;
+        case "Digit4":
+          handleRatingKeydown(4);
+          break;
+        case "Digit5":
+          handleRatingKeydown(5);
+          break;
         default:
       }
     };
@@ -82,10 +113,10 @@ const AlbumList = (props: AlbumListProps) => {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [breakPointName, data, isKeyInterrupt, selectIndex]);
+  }, [breakPointName, data, isKeyInterrupt, onAlbumClick, selectIndex]);
 
   return (
-    <Grid container columns={NUM_OF_COLUMN} spacing={2}>
+    <Grid container columns={NUM_OF_COLUMN} spacing={1}>
       {data.map((album, index) => (
         <AlbumListItem
           key={index}
@@ -94,8 +125,13 @@ const AlbumList = (props: AlbumListProps) => {
           author={album.author}
           thumbnail={album.thumbnail}
           source={album.source}
+          rating={album.rating}
           isSelected={index === selectIndex}
+          onClick={() => onAlbumClick(index)}
           onSelect={() => setSelectIndex(index)}
+          onRatingChange={(rating: number) =>
+            onAlbumRatingChange(index, rating)
+          }
         />
       ))}
     </Grid>

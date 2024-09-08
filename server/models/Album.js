@@ -36,6 +36,12 @@ module.exports = (sequelize, DataTypes) => {
       data: {
         type: DataTypes.TEXT,
       },
+      rating: {
+        type: DataTypes.INTEGER,
+      },
+      lastViewAt: {
+        type: DataTypes.DATE,
+      },
     },
     {
       sequelize,

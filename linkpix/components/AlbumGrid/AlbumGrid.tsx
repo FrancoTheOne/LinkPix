@@ -2,7 +2,7 @@ import { lightTheme } from "@/theme";
 import { Album } from "@/types/album";
 import { PaginationParams, SortingParams } from "@/types/common";
 import { ThemeProvider } from "@emotion/react";
-import { Box, IconButton } from "@mui/material";
+import { Box, IconButton, Rating, Tooltip } from "@mui/material";
 import {
   DataGrid,
   GridColDef,
@@ -24,6 +24,7 @@ interface AlbumGridProps {
     album: Partial<Album> & Required<Pick<Album, "id">>,
     prev: Partial<Album>
   ) => void;
+  onAlbumRatingChange: (index: number, rating: number) => void;
   onDelete: (id: number, displayName: string) => void;
 }
 
@@ -36,6 +37,7 @@ const AlbumGrid = (props: AlbumGridProps) => {
     onSort,
     onEditToggle,
     onEditSubmit,
+    onAlbumRatingChange,
     onDelete,
   } = props;
   const apiRef = useGridApiRef();
@@ -82,7 +84,6 @@ const AlbumGrid = (props: AlbumGridProps) => {
 
   const handleRowDelete = useCallback(
     (params: GridRenderCellParams) => {
-      console.log();
       onDelete(
         +params.id.valueOf(),
         `${params.row?.author} - ${params.row?.name}`
@@ -91,25 +92,51 @@ const AlbumGrid = (props: AlbumGridProps) => {
     [onDelete]
   );
 
+  const handleRatingChange = useCallback(
+    (params: GridRenderCellParams, rating: number) => {
+      const index = data.findIndex((item) => item.id === +params.id);
+      if (index !== -1) {
+        onAlbumRatingChange(index, rating);
+      }
+    },
+    [data, onAlbumRatingChange]
+  );
+
   const columns: GridColDef[] = useMemo(
     () => [
       { field: "id", headerName: "ID", width: 70 },
       { field: "author", headerName: "Author", flex: 1, editable: true },
       { field: "name", headerName: "Name", flex: 1, editable: true },
       {
+        field: "rating",
+        headerName: "Rating",
+        width: 110,
+        display: "flex",
+        renderCell: (params) => (
+          <Rating
+            value={params.row.rating}
+            size="small"
+            onChange={(_, value) => handleRatingChange(params, value ?? 0)}
+          />
+        ),
+      },
+      {
         field: "action",
         headerName: "Action",
         sortable: false,
         filterable: false,
+        width: 80,
         display: "flex",
         renderCell: (params) => (
-          <IconButton onClick={() => handleRowDelete(params)}>
-            <DeleteIcon fontSize="small" />
-          </IconButton>
+          <Tooltip title="Delete">
+            <IconButton onClick={() => handleRowDelete(params)}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         ),
       },
     ],
-    [handleRowDelete]
+    [handleRatingChange, handleRowDelete]
   );
 
   return (
