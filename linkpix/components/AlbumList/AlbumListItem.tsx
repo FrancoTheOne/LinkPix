@@ -38,14 +38,14 @@ const AlbumListItem = (props: AlbumListItemProps) => {
     onSelect,
     onRatingChange,
   } = props;
-  const cardRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLButtonElement>(null);
 
   // TODO: scrollIntoView
-  useEffect(() => {
-    if (isSelected && cardRef.current) {
-      cardRef.current.focus();
-    }
-  }, [isSelected]);
+  // useEffect(() => {
+  //   if (isSelected && cardRef.current) {
+  //     cardRef.current.focus();
+  //   }
+  // }, [isSelected]);
 
   const handleRatingChange = useCallback(
     (_event: React.SyntheticEvent, value: number | null) => {
@@ -57,13 +57,12 @@ const AlbumListItem = (props: AlbumListItemProps) => {
   return (
     <Grid item xs={1} maxHeight={256} sx={{ aspectRatio: 3 / 4 }}>
       <Card
-        ref={cardRef}
         elevation={isSelected ? 10 : 4}
         sx={{ height: "100%" }}
         onClick={onClick}
         onMouseEnter={onSelect}
       >
-        <CardActionArea className="h-full">
+        <CardActionArea ref={cardRef} className="h-full">
           <CardContent
             className="relative h-full flex flex-col justify-end"
             sx={{ p: 0 }}

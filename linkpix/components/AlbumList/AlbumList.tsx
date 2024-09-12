@@ -113,7 +113,14 @@ const AlbumList = (props: AlbumListProps) => {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [breakPointName, data, isKeyInterrupt, onAlbumClick, selectIndex]);
+  }, [
+    breakPointName,
+    data,
+    handleRatingKeydown,
+    isKeyInterrupt,
+    onAlbumClick,
+    selectIndex,
+  ]);
 
   return (
     <Grid container columns={NUM_OF_COLUMN} spacing={1}>

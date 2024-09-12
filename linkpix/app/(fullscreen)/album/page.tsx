@@ -7,15 +7,15 @@ type AlbumDataType = {
 };
 
 const AlbumPage = async () => {
-  const res = await fetch("http://localhost:3001/album/5");
-  let album = await res.json();
-  const { prefix: imgPrefix, data: imgList }: AlbumDataType = JSON.parse(
-    album.data
-  );
-  const data = imgList.map((img) => `${imgPrefix}${img}`);
+  // const res = await fetch("http://localhost:3001/album/5");
+  // let album = await res.json();
+  // const { prefix: imgPrefix, data: imgList }: AlbumDataType = JSON.parse(
+  //   album.data
+  // );
+  // const data = imgList.map((img) => `${imgPrefix}${img}`);
   return (
     <Stack height={"100%"} sx={{ py: 3 }}>
-      {imgList.slice(0, 5).map((img, index) => (
+      {/* {imgList.slice(0, 5).map((img, index) => (
         <Box key={index} width={"100%"} height={"100%"}>
           {
             // eslint-disable-next-line @next/next/no-img-element
@@ -29,7 +29,7 @@ const AlbumPage = async () => {
             // <img src={`${imgPrefix}${img}`} alt={index}></img>
           }
         </Box>
-      ))}
+      ))} */}
     </Stack>
   );
 };
