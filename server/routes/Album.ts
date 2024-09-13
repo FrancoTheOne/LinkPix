@@ -1,19 +1,96 @@
 "use strict";
-const express = require("express");
-const router = express.Router();
-const path = require("path");
-const OpenCC = require("opencc-js");
-const { Album } = require("../models");
-const prefixReducer = require("../utils/prefixReducer");
-const saveCropImage = require("../utils/saveCropImage");
-const { Op } = require("sequelize");
-const { unlink } = require("fs");
+import { Router } from "express";
+const router = Router();
+import { join } from "path";
+import { Converter } from "opencc-js";
+import models from "../models/Album";
+// const { Album, sequelize } = models;
+import prefixReducer from "../utils/prefixReducer";
+import saveCropImage from "../utils/saveCropImage";
+import { Op, DataTypes } from "sequelize";
+import { unlink } from "fs";
+import { dirname } from "path";
+import { sequelize } from "../models/index";
 
-const zhConverter = OpenCC.Converter({ from: "cn", to: "hk" });
-const thumbnailFolder = path.join(
+const __dirname = dirname(import.meta.filename);
+
+const zhConverter = Converter({ from: "cn", to: "hk" });
+const thumbnailFolder = join(
   __dirname,
   "../../linkpix/public/image/thumbnails"
 );
+
+router.post("/test", async (req, res) => {
+  const table = req.query.table;
+  sequelize.getQueryInterface().createTable(table, {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    name: {
+      type: DataTypes.STRING,
+    },
+    category: {
+      type: DataTypes.STRING,
+    },
+    author: {
+      type: DataTypes.STRING,
+    },
+    source: {
+      type: DataTypes.STRING,
+    },
+    thumbnail: {
+      type: DataTypes.STRING,
+    },
+    data: {
+      type: DataTypes.TEXT,
+    },
+    rating: {
+      type: DataTypes.INTEGER,
+    },
+    lastViewAt: {
+      type: DataTypes.DATE,
+    },
+  });
+  // Album.sync({ force: true, tableName: "test" });
+  // const album = await Album.findOne({
+  //   where: { id: req.params.id },
+  //   attributes: ["data"],
+  // });
+  res.json({ user: "world" });
+});
+
+router.get("/test", async (req, res) => {
+  const table = req.query.table;
+  // const { count, rows: data } = await  sequelize.table Album.findAndCountAll({
+  //   attributes: [
+  //     "id",
+  //     "name",
+  //     "category",
+  //     "author",
+  //     "thumbnail",
+  //     "source",
+  //     "rating",
+  //     "lastViewAt",
+  //   ],
+  //   where: req.query.search
+  //     ? {
+  //         [Op.or]: [
+  //           { name: { [Op.like]: `%${search}%` } },
+  //           { author: { [Op.like]: `%${search}%` } },
+  //         ],
+  //       }
+  //     : {},
+  //   order: [
+  //     [order, direction],
+  //     ["id", "DESC"],
+  //   ],
+  //   offset,
+  //   limit,
+  // });
+  // res.json({ data, count, offset: Number(offset), limit: Number(limit) });
+});
 
 router.get("/list", async (req, res) => {
   const offset = parseInt(req.query?.offset) || 0;
@@ -22,7 +99,10 @@ router.get("/list", async (req, res) => {
   const order = req.query.order || "id";
   const direction = req.query.direction || "DESC";
 
-  const { count, rows: data } = await Album.findAndCountAll({
+  const album = models(sequelize, DataTypes);
+  console.log("wtf");
+
+  const { count, rows: data } = await album.findAndCountAll({
     attributes: [
       "id",
       "name",
@@ -88,7 +168,7 @@ router.delete("/:id", async (req, res) => {
     res.status(409).json({ message: "Album not found!" });
     return;
   }
-  unlink(path.join(thumbnailFolder, album.thumbnail), (err) => {
+  unlink(join(thumbnailFolder, album.thumbnail), (err) => {
     console.log(`${album.thumbnail} is not found`);
   });
   const result = await Album.destroy({
@@ -110,7 +190,7 @@ router.put("/", async (req, res) => {
     if (album) {
       saveCropImage(
         thumbnailUrl,
-        path.join(thumbnailFolder, album.thumbnail),
+        join(thumbnailFolder, album.thumbnail),
         256,
         256
       );
@@ -120,7 +200,7 @@ router.put("/", async (req, res) => {
 
     const fileName = `${new Date().getTime()}.webp`;
 
-    saveCropImage(thumbnailUrl, path.join(thumbnailFolder, fileName), 256, 256);
+    saveCropImage(thumbnailUrl, join(thumbnailFolder, fileName), 256, 256);
     const title = zhConverter(req.body.title);
     const payload = {
       name: title,
@@ -137,4 +217,4 @@ router.put("/", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

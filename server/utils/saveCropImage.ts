@@ -1,6 +1,6 @@
-const http = require("http");
-const https = require("https");
-const sharp = require("sharp");
+import http from "http";
+import https from "https";
+import sharp from "sharp";
 
 const saveCropImage = (url, outputPath, width, height) => {
   const protocol = url.startsWith("https") ? https : http;
@@ -31,4 +31,4 @@ const saveCropImage = (url, outputPath, width, height) => {
     });
 };
 
-module.exports = saveCropImage;
+export default saveCropImage;

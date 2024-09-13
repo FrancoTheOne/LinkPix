@@ -38,4 +38,4 @@ const prefixReducer = (urls) => {
   };
 };
 
-module.exports = prefixReducer;
+export default prefixReducer;
