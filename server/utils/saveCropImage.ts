@@ -2,7 +2,12 @@ import http from "http";
 import https from "https";
 import sharp from "sharp";
 
-const saveCropImage = (url, outputPath, width, height) => {
+const saveCropImage = (
+  url: string,
+  outputPath: string,
+  width: number,
+  height: number
+) => {
   const protocol = url.startsWith("https") ? https : http;
 
   protocol
@@ -15,7 +20,7 @@ const saveCropImage = (url, outputPath, width, height) => {
 
       response.on("end", () => {
         sharp(data)
-          .resize(width, height, { fit: "inside" })
+          .resize(width, height)
           .webp({ quality: 70 })
           .toFile(outputPath, (err, info) => {
             if (err) {

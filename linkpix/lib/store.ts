@@ -1,15 +1,20 @@
 import { configureStore } from "@reduxjs/toolkit";
 import counterReducer from "./counter/counterSlice";
 import { albumApi } from "@/services/album";
+import { repositoryApi } from "@/services/repository";
 
 export const makeStore = () => {
   return configureStore({
     reducer: {
       counter: counterReducer,
       [albumApi.reducerPath]: albumApi.reducer,
+      [repositoryApi.reducerPath]: repositoryApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware().concat(albumApi.middleware),
+      getDefaultMiddleware().concat(
+        albumApi.middleware,
+        repositoryApi.middleware
+      ),
   });
 };
 

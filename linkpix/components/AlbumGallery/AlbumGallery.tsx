@@ -1,9 +1,9 @@
 "use client";
 import React, { useCallback, useEffect, useState } from "react";
-import AlbumListItem from "./AlbumListItem";
+import AlbumGalleryItem from "./AlbumGalleryItem";
 import { Grid } from "@mui/material";
 import useBreakpoint from "@/hook/useBreakpoint";
-import { Album } from "@/types/album";
+import { AlbumItem } from "@/types/album";
 
 const NUM_OF_COLUMN: Record<string, number> = {
   xs: 3,
@@ -14,14 +14,14 @@ const NUM_OF_COLUMN: Record<string, number> = {
 };
 
 interface AlbumListProps {
-  data: Album[];
+  data: AlbumItem[];
   isKeyInterrupt: boolean;
-  onAlbumClick: (index: number) => void;
-  onAlbumRatingChange: (index: number, rating: number) => void;
+  onItemClick: (index: number) => void;
+  onItemRatingChange: (index: number, rating: number) => void;
 }
 
-const AlbumList = (props: AlbumListProps) => {
-  const { data, isKeyInterrupt, onAlbumClick, onAlbumRatingChange } = props;
+const AlbumGallery = (props: AlbumListProps) => {
+  const { data, isKeyInterrupt, onItemClick, onItemRatingChange } = props;
   const [selectIndex, setSelectIndex] = useState(0);
   const { breakPointName } = useBreakpoint();
 
@@ -31,12 +31,12 @@ const AlbumList = (props: AlbumListProps) => {
 
   const handleRatingKeydown = useCallback(
     (rating: number) => {
-      onAlbumRatingChange(
+      onItemRatingChange(
         selectIndex,
         data[selectIndex].rating === rating ? 0 : rating
       );
     },
-    [data, onAlbumRatingChange, selectIndex]
+    [data, onItemRatingChange, selectIndex]
   );
 
   useEffect(() => {
@@ -84,7 +84,7 @@ const AlbumList = (props: AlbumListProps) => {
           });
           break;
         case "KeyC":
-          onAlbumClick(selectIndex);
+          onItemClick(selectIndex);
           break;
         case "Digit0":
           handleRatingKeydown(0);
@@ -118,31 +118,28 @@ const AlbumList = (props: AlbumListProps) => {
     data,
     handleRatingKeydown,
     isKeyInterrupt,
-    onAlbumClick,
+    onItemClick,
     selectIndex,
   ]);
 
   return (
     <Grid container columns={NUM_OF_COLUMN} spacing={1}>
       {data.map((album, index) => (
-        <AlbumListItem
+        <AlbumGalleryItem
           key={index}
-          name={album.name}
-          category={album.category}
-          author={album.author}
-          thumbnail={album.thumbnail}
-          source={album.source}
+          title={album.title}
+          subtitle={album.subtitle}
+          thumb={album.thumb}
           rating={album.rating}
+          info={album.info}
           isSelected={index === selectIndex}
-          onClick={() => onAlbumClick(index)}
+          onClick={() => onItemClick(index)}
           onSelect={() => setSelectIndex(index)}
-          onRatingChange={(rating: number) =>
-            onAlbumRatingChange(index, rating)
-          }
+          onRatingChange={(rating: number) => onItemRatingChange(index, rating)}
         />
       ))}
     </Grid>
   );
 };
 
-export default AlbumList;
+export default AlbumGallery;

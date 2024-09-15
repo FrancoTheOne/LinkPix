@@ -1,20 +1,14 @@
 "use strict";
-
-import { readdirSync } from "fs";
-import { basename as _basename, join } from "path";
-import { Sequelize } from "sequelize";
+import { basename as _basename } from "path";
+import { Model, ModelStatic, Sequelize } from "sequelize";
 import { env as _env } from "process";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
 import configList from "../config/config.json" assert { type: "json" };
+import { getRepositoryModel } from "./Repository";
 
-const __dirname = import.meta.dirname;
-const basename = _basename(import.meta.filename);
 const env = _env.NODE_ENV || "development";
 const config = configList[env];
-const db = {};
 
-let sequelize;
+let sequelize: Sequelize;
 if (config.use_env_variable) {
   sequelize = new Sequelize(_env[config.use_env_variable], config);
 } else {
@@ -26,30 +20,16 @@ if (config.use_env_variable) {
   );
 }
 
-// readdirSync(__dirname)
-//   .filter((file) => {
-//     return (
-//       file.indexOf(".") !== 0 &&
-//       file !== basename &&
-//       file.slice(-3) === ".js" &&
-//       file.indexOf(".test.js") === -1
-//     );
-//   })
-//   .forEach((file) => {
-//     const model = require(join(__dirname, file))(
-//       sequelize,
-//       Sequelize.DataTypes
-//     );
-//     db[model.name] = model;
-//   });
+interface db {
+  sequelize: Sequelize;
+  models: Partial<Record<string, ModelStatic<Model>>>;
+}
 
-// Object.keys(db).forEach((modelName) => {
-//   if (db[modelName].associate) {
-//     db[modelName].associate(db);
-//   }
-// });
+const db = {
+  sequelize,
+  models: {
+    repository: getRepositoryModel(sequelize),
+  },
+};
 
-// db.sequelize = sequelize;
-// db.Sequelize = Sequelize;
-
-export { sequelize, Sequelize };
+export { db };

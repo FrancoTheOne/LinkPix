@@ -1,4 +1,4 @@
-import { Album } from "@/types/album";
+import { AlbumItem } from "@/types/album";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const albumApi = createApi({
@@ -9,11 +9,12 @@ export const albumApi = createApi({
       process.env.NEXT_PUBLIC_SERVER_DOMAIN
     ).toString(),
   }),
-  tagTypes: ["AlbumList"],
+  tagTypes: ["album"],
   endpoints: (builder) => ({
-    getAlbumList: builder.query<
-      { data: Album[]; count: number; offset: number; limit: number },
+    getAlbum: builder.query<
+      { data: AlbumItem[]; count: number; offset: number; limit: number },
       {
+        albumId: number;
         offset?: number;
         limit?: number;
         search?: string;
@@ -21,35 +22,40 @@ export const albumApi = createApi({
         direction?: string;
       }
     >({
-      query: (params) => ({
-        url: "/list",
-        params: params,
-      }),
-      providesTags: () => ["AlbumList"],
+      query: (params) => {
+        const { albumId, ...otherParams } = params;
+        return {
+          url: `/${albumId}`,
+          params: otherParams,
+        };
+      },
+      providesTags: (_result, _error, arg) => [
+        { type: "album", id: arg.albumId },
+      ],
     }),
-    updateAlbum: builder.mutation<
+    updateAlbumItem: builder.mutation<
       void,
-      Partial<Album> & Required<Pick<Album, "id">>
+      { albumId: number } & Partial<AlbumItem> & Required<Pick<AlbumItem, "id">>
     >({
-      query: ({ id, ...body }) => ({
-        url: `/${id}`,
+      query: ({ albumId, id, ...body }) => ({
+        url: `/${albumId}/${id}`,
         method: "PATCH",
         body,
       }),
-      invalidatesTags: () => ["AlbumList"],
+      invalidatesTags: () => ["album"],
     }),
-    deleteAlbum: builder.mutation<void, number>({
-      query: (id) => ({
-        url: `/${id}`,
+    deleteAlbumItem: builder.mutation<void, { albumId: number; id: number }>({
+      query: ({ albumId, id }) => ({
+        url: `/${albumId}/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: () => ["AlbumList"],
+      invalidatesTags: () => ["album"],
     }),
   }),
 });
 
 export const {
-  useGetAlbumListQuery,
-  useUpdateAlbumMutation,
-  useDeleteAlbumMutation,
+  useGetAlbumQuery,
+  useUpdateAlbumItemMutation,
+  useDeleteAlbumItemMutation,
 } = albumApi;

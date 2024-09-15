@@ -13,32 +13,33 @@ import {
 import { darkTheme as theme } from "@/theme";
 
 interface AlbumListItemProps {
-  name: string;
-  thumbnail: string;
-  category: string;
-  author: string;
-  source: string;
+  title: string;
+  subtitle: string;
+  thumb: string;
   rating: number;
+  info: string;
   isSelected: boolean;
   onClick: () => void;
   onSelect: () => void;
   onRatingChange: (rating: number) => void;
 }
 
-const AlbumListItem = (props: AlbumListItemProps) => {
+const AlbumGalleryItem = (props: AlbumListItemProps) => {
   const {
-    name,
-    thumbnail,
-    category,
-    author,
-    source,
+    title,
+    subtitle,
+    thumb,
     rating,
+    info,
     isSelected,
     onClick,
     onSelect,
     onRatingChange,
   } = props;
   const cardRef = useRef<HTMLButtonElement>(null);
+
+  const { size, source }: { size: number; source: string } = JSON.parse(info);
+  console.log(info);
 
   // TODO: scrollIntoView
   // useEffect(() => {
@@ -70,8 +71,8 @@ const AlbumListItem = (props: AlbumListItemProps) => {
             {
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={`/image/thumbnails/${thumbnail}`}
-                alt={name}
+                src={`/image/thumbnails/${thumb}`}
+                alt={title}
                 draggable={false}
                 className={`absolute w-full h-full object-cover transition-all ${
                   isSelected && "scale-110"
@@ -96,17 +97,26 @@ const AlbumListItem = (props: AlbumListItemProps) => {
                   fontSize={"0.875rem"}
                   className="line-clamp-2 transition"
                 >
-                  {name}
+                  {title}
                 </Typography>
               </Stack>
 
-              <Typography
-                color={isSelected ? "common.black" : "grey.100"}
-                fontSize={"0.75rem"}
-                className="line-clamp-1 transition"
-              >
-                {author}
-              </Typography>
+              <Stack direction="row" justifyContent="space-between">
+                <Typography
+                  color={isSelected ? "common.black" : "grey.100"}
+                  fontSize={"0.75rem"}
+                  className="line-clamp-1 transition"
+                >
+                  {subtitle}
+                </Typography>
+                <Typography
+                  color={isSelected ? "common.black" : "grey.100"}
+                  fontSize={"0.75rem"}
+                  className="line-clamp-1 transition"
+                >
+                  {size}
+                </Typography>
+              </Stack>
               <Box
                 sx={{ top: "-20px" }}
                 className="absolute right-0 px-1"
@@ -133,4 +143,4 @@ const AlbumListItem = (props: AlbumListItemProps) => {
   );
 };
 
-export default AlbumListItem;
+export default AlbumGalleryItem;

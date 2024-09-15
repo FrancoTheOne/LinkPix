@@ -1,12 +1,13 @@
-type Album = {
+type AlbumItem = {
   id: number;
-  name: string;
-  category: string;
-  author: string;
-  thumbnail: string;
-  source: string;
+  title: string;
+  subtitle: string;
+  thumb: string;
+  tags: string;
   rating: number;
+  info: string;
+  content: string;
   lastViewAt: string;
 };
 
-export type { Album };
+export type { AlbumItem };

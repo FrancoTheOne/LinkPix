@@ -1,16 +1,12 @@
 "use client";
 import { increment, decrement } from "@/lib/counter/counterSlice";
 import { RootState } from "@/lib/store";
-import { useGetAlbumListQuery } from "@/services/album";
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
 
 const Temp = () => {
   const count = useSelector((state: RootState) => state.counter.value);
   const dispatch = useDispatch();
-
-  const { data, error, isLoading } = useGetAlbumListQuery({});
-  console.log(data);
 
   return (
     <div>
