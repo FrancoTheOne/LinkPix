@@ -18,7 +18,7 @@ import {
 const __dirname = dirname(import.meta.filename);
 
 const zhConverter = Converter({ from: "cn", to: "hk" });
-const thumbFolder = join(__dirname, "../../linkpix/public/image/thumbnails");
+const thumbFolder = join(__dirname, "../../linkpix/public/image/thumbs");
 
 router.get<
   { id: string },
@@ -45,6 +45,7 @@ router.get<
       "id",
       "title",
       "subtitle",
+      "action",
       "thumb",
       "tags",
       "rating",
@@ -136,17 +137,17 @@ router.put<{ id: string }, any, Partial<AlbumAttributes>>(
   async (req, res) => {
     try {
       const { id } = req.params;
-      const { thumb } = req.body;
+      const { action, thumb } = req.body;
       const album = await getAlbumModel(db, id);
       const info = JSON.parse(req.body.info);
       const content = JSON.parse(req.body.content);
 
-      if (!info || !("source" in info)) {
-        return res.status(400).json({ message: "Insufficient data" });
-      }
+      // if (!info || !("source" in info)) {
+      //   return res.status(400).json({ message: "Insufficient data" });
+      // }
 
       const item = await album.findOne({
-        where: { "info.source": info?.source },
+        where: { action },
       });
       if (item && thumb) {
         saveCropImage(thumb, join(thumbFolder, item.thumb), 180, 270);
@@ -161,6 +162,7 @@ router.put<{ id: string }, any, Partial<AlbumAttributes>>(
       const payload: Partial<AlbumAttributes> = {
         title,
         subtitle: title,
+        action: action,
         thumb: fileName,
         tags: "",
         rating: 0,

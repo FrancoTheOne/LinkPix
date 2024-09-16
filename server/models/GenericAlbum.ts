@@ -7,6 +7,7 @@ export interface AlbumAttributes {
   id: number;
   title: string;
   subtitle: string;
+  action: string;
   thumb: string;
   tags: string;
   rating: number;
@@ -33,6 +34,9 @@ const modelAttributes = {
     type: DataTypes.STRING,
   },
   subtitle: {
+    type: DataTypes.STRING,
+  },
+  action: {
     type: DataTypes.STRING,
   },
   thumb: {
@@ -88,10 +92,6 @@ const createAlbumTable = async (db: db, tableName: string) => {
   });
   db.sequelize.sync({ alter: true });
   db.models[model.name] = model;
-
-  // await db.sequelize
-  //   .getQueryInterface()
-  //   .createTable(tableName, modelAttributes, {});
 };
 
 export { getAlbumModel, createAlbumTable };

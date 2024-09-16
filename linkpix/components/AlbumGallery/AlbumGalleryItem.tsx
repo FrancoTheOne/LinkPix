@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import {
   alpha,
   Box,
@@ -11,13 +11,14 @@ import {
   Typography,
 } from "@mui/material";
 import { darkTheme as theme } from "@/theme";
+import { AlbumItem } from "@/types/album";
 
 interface AlbumListItemProps {
   title: string;
   subtitle: string;
   thumb: string;
   rating: number;
-  info: string;
+  info: AlbumItem["info"];
   isSelected: boolean;
   onClick: () => void;
   onSelect: () => void;
@@ -38,8 +39,7 @@ const AlbumGalleryItem = (props: AlbumListItemProps) => {
   } = props;
   const cardRef = useRef<HTMLButtonElement>(null);
 
-  const { size, source }: { size: number; source: string } = JSON.parse(info);
-  console.log(info);
+  const size = info.size as string;
 
   // TODO: scrollIntoView
   // useEffect(() => {
@@ -71,7 +71,7 @@ const AlbumGalleryItem = (props: AlbumListItemProps) => {
             {
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={`/image/thumbnails/${thumb}`}
+                src={`/image/thumbs/${thumb}`}
                 alt={title}
                 draggable={false}
                 className={`absolute w-full h-full object-cover transition-all ${
@@ -101,11 +101,11 @@ const AlbumGalleryItem = (props: AlbumListItemProps) => {
                 </Typography>
               </Stack>
 
-              <Stack direction="row" justifyContent="space-between">
+              <Stack direction="row" gap={1}>
                 <Typography
                   color={isSelected ? "common.black" : "grey.100"}
                   fontSize={"0.75rem"}
-                  className="line-clamp-1 transition"
+                  className="flex-1 line-clamp-1 transition"
                 >
                   {subtitle}
                 </Typography>

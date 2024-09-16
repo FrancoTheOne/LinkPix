@@ -195,12 +195,12 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
   const handleItemClick = useCallback(
     (index: number) => {
       if (albumData) {
-        const info = JSON.parse(albumData.data[index].info);
-        if (!info.source) {
+        const action = albumData.data[index].action;
+        if (!action) {
           alert("Error: Link is missing");
           return;
         }
-        window.open(info.source, "_blank");
+        window.open(action, "_blank");
         updateAlbum({
           albumId,
           id: albumData.data[index].id,
