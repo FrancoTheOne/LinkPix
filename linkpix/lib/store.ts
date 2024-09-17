@@ -1,5 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import counterReducer from "./counter/counterSlice";
+import settingReducer from "./setting/settingSlice";
 import { albumApi } from "@/services/album";
 import { repositoryApi } from "@/services/repository";
 
@@ -7,6 +8,7 @@ export const makeStore = () => {
   return configureStore({
     reducer: {
       counter: counterReducer,
+      setting: settingReducer,
       [albumApi.reducerPath]: albumApi.reducer,
       [repositoryApi.reducerPath]: repositoryApi.reducer,
     },

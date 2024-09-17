@@ -1,3 +1,7 @@
+import {
+  activateKeyShortcut,
+  deactivateKeyShortcut,
+} from "@/lib/setting/settingSlice";
 import { TextField } from "@mui/material";
 import React, {
   ChangeEvent,
@@ -6,17 +10,18 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useDispatch } from "react-redux";
 
 interface AlbumSearchProps {
-  isFocused: boolean;
   onChange: (value: string) => void;
-  onFocusChange: (isFocused: boolean) => void;
 }
 
 const AlbumSearch = (props: AlbumSearchProps) => {
-  const { isFocused, onChange, onFocusChange } = props;
+  const { onChange } = props;
+  const dispatch = useDispatch();
   const [value, setValue] = useState("");
   const prevValue = useRef("");
+  const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>();
 
   useEffect(() => {
@@ -39,9 +44,28 @@ const AlbumSearch = (props: AlbumSearchProps) => {
     setValue(event.target.value);
   }, []);
 
-  const handleFocus = useCallback(() => onFocusChange(true), [onFocusChange]);
+  const handleFocus = useCallback(() => {
+    setIsFocused(true);
+    dispatch(deactivateKeyShortcut());
+  }, [dispatch]);
 
-  const handleBlur = useCallback(() => onFocusChange(false), [onFocusChange]);
+  const handleBlur = useCallback(() => {
+    setIsFocused(false);
+    dispatch(activateKeyShortcut());
+  }, [dispatch]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code === "Backquote") {
+        event.preventDefault();
+        setIsFocused((prev) => !prev);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   return (
     <TextField

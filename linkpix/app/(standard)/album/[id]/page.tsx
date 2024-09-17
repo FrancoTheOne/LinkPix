@@ -32,6 +32,8 @@ import {
   ViewComfy,
 } from "@mui/icons-material";
 import { darkTheme as theme } from "@/theme";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/store";
 
 enum ViewMode {
   "Browse",
@@ -50,6 +52,10 @@ const PAGINATION_LIMIT = [14, 21, 28];
 
 const AlbumPage = ({ params }: { params: { id: string } }) => {
   const albumId = parseInt(params.id);
+  const isKeyShortcutDisabled = useSelector(
+    (state: RootState) => state.setting.isKeyShortcutDisabled
+  );
+
   const [mode, setMode] = useState<ViewMode>(ViewMode.Browse);
   const [paginationParams, setPaginationParams] = useState<PaginationParams>({
     page: 0,
@@ -60,7 +66,6 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
     sort: "desc",
   });
   const [searchText, setSearchText] = useState("");
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(
     null
   );
@@ -69,7 +74,6 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
     null
   );
   const isLimitMenuOpen = Boolean(limitMenuAnchor);
-  const [isItemEditing, setIsItemEditing] = useState(false);
 
   const { data: albumData, isLoading: isAlbumListLoading } = useGetAlbumQuery({
     albumId,
@@ -92,15 +96,6 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.code === "Backquote") {
-        event.preventDefault();
-        setIsSearchFocused((prev) => !prev);
-        return;
-      }
-      if (isSearchFocused || isItemEditing) {
-        return;
-      }
-
       switch (event.code) {
         case "KeyZ":
           setPaginationParams((prev) =>
@@ -117,13 +112,14 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
         default:
       }
     };
-    document.addEventListener("keydown", handleKeyDown);
+    if (!isKeyShortcutDisabled) {
+      document.addEventListener("keydown", handleKeyDown);
+    }
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [
-    isItemEditing,
-    isSearchFocused,
+    isKeyShortcutDisabled,
     mode,
     paginationParams.limit,
     paginationParams.page,
@@ -211,11 +207,6 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
     [albumId, albumData, updateAlbum]
   );
 
-  const handleItemEditToggle = useCallback(
-    (isEditing: boolean) => setIsItemEditing(isEditing),
-    []
-  );
-
   const handleItemEditSubmit = useCallback(
     async (item: Partial<AlbumItem> & Required<Pick<AlbumItem, "id">>) => {
       try {
@@ -230,17 +221,22 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
   const handleItemEditRequest = useCallback(
     (
       item: Partial<AlbumItem> & Required<Pick<AlbumItem, "id">>,
-      prev: Partial<AlbumItem>
+      prev: Partial<AlbumItem>,
+      force = false
     ) => {
       const changeList = Object.entries(prev).map(
         ([key, value]) => `${key}:\n${value} ⇒ ${item[key as keyof AlbumItem]}`
       );
-      setDialogData({
-        title: "Confirmation",
-        content: changeList.join("\n"),
-        onConfirm: () => handleItemEditSubmit(item),
-      });
-      openDialog();
+      if (force) {
+        handleItemEditSubmit(item);
+      } else {
+        setDialogData({
+          title: "Confirmation",
+          content: changeList.join("\n"),
+          onConfirm: () => handleItemEditSubmit(item),
+        });
+        openDialog();
+      }
     },
     [handleItemEditSubmit, openDialog, setDialogData]
   );
@@ -281,11 +277,6 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
     [handleItemDelete, openDialog, setDialogData]
   );
 
-  const handleSearchFocusChange = useCallback(
-    (isFocused: boolean) => setIsSearchFocused(isFocused),
-    []
-  );
-
   return (
     <>
       <BasicDialog {...dialogData} />
@@ -303,11 +294,7 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
               position={"relative"}
               alignItems={"center"}
             >
-              <AlbumSearch
-                isFocused={isSearchFocused}
-                onFocusChange={handleSearchFocusChange}
-                onChange={handleSearchChange}
-              ></AlbumSearch>
+              <AlbumSearch onChange={handleSearchChange}></AlbumSearch>
               <Tooltip title="Sort" placement="top">
                 <IconButton
                   id="sort-menu-button"
@@ -419,7 +406,6 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
           {mode === ViewMode.Browse && (
             <AlbumGallery
               data={albumData.data}
-              isKeyInterrupt={isSearchFocused}
               onItemClick={handleItemClick}
               onItemRatingChange={handleItemRatingChange}
             />
@@ -431,7 +417,6 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
               paginationParams={paginationParams}
               sortingParams={sortingParams}
               onSort={handleSort}
-              onItemEditToggle={handleItemEditToggle}
               onItemEditSubmit={handleItemEditRequest}
               onItemRatingChange={handleItemRatingChange}
               onItemDelete={handleItemDeleteRequest}

@@ -8,10 +8,16 @@ import {
   GridColDef,
   GridRenderCellParams,
   GridSortModel,
+  MuiEvent,
   useGridApiRef,
 } from "@mui/x-data-grid";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { useDispatch } from "react-redux";
+import {
+  activateKeyShortcut,
+  deactivateKeyShortcut,
+} from "@/lib/setting/settingSlice";
 
 interface AlbumGridProps {
   data: AlbumItem[];
@@ -19,10 +25,10 @@ interface AlbumGridProps {
   paginationParams: PaginationParams;
   sortingParams: SortingParams;
   onSort: (field: string, sort: SortingParams["sort"]) => void;
-  onItemEditToggle: (isEditing: boolean) => void;
   onItemEditSubmit: (
     album: Partial<AlbumItem> & Required<Pick<AlbumItem, "id">>,
-    prev: Partial<AlbumItem>
+    prev: Partial<AlbumItem>,
+    force?: boolean
   ) => void;
   onItemRatingChange: (index: number, rating: number) => void;
   onItemDelete: (id: number, displayName: string) => void;
@@ -35,12 +41,13 @@ const AlbumGrid = (props: AlbumGridProps) => {
     paginationParams,
     sortingParams,
     onSort,
-    onItemEditToggle,
     onItemEditSubmit,
     onItemRatingChange,
     onItemDelete,
   } = props;
+  const dispatch = useDispatch();
   const apiRef = useGridApiRef();
+  const [isNextSubmitForce, setIsNextSubmitForce] = useState(false);
 
   const handleSortModelChange = useCallback(
     (model: GridSortModel) => {
@@ -51,9 +58,22 @@ const AlbumGrid = (props: AlbumGridProps) => {
     [onSort]
   );
 
+  const handleCellEditStart = useCallback(() => {
+    dispatch(deactivateKeyShortcut());
+  }, [dispatch]);
+
   const handleCellEditStop = useCallback(() => {
-    onItemEditToggle(false);
-  }, [onItemEditToggle]);
+    dispatch(activateKeyShortcut());
+  }, [dispatch]);
+
+  const handleCellKeydown = useCallback(
+    (_params: any, event: MuiEvent<React.KeyboardEvent<HTMLElement>>) => {
+      if (event.code === "Enter" && event.shiftKey) {
+        setIsNextSubmitForce(true);
+      }
+    },
+    []
+  );
 
   const handleProcessRowUpdate = useCallback(
     async (
@@ -74,12 +94,14 @@ const AlbumGrid = (props: AlbumGridProps) => {
           },
           Object.fromEntries(
             updateData.map(([key]) => [key, oldRow[key as string]])
-          )
+          ),
+          isNextSubmitForce
         );
+        setIsNextSubmitForce(false);
       }
       return oldRow;
     },
-    [onItemEditSubmit]
+    [isNextSubmitForce, onItemEditSubmit]
   );
 
   const handleRowDelete = useCallback(
@@ -160,7 +182,9 @@ const AlbumGrid = (props: AlbumGridProps) => {
             pageSize: paginationParams.limit,
           }}
           sortModel={[sortingParams]}
+          onCellEditStart={handleCellEditStart}
           onCellEditStop={handleCellEditStop}
+          onCellKeyDown={handleCellKeydown}
           onSortModelChange={handleSortModelChange}
           processRowUpdate={handleProcessRowUpdate}
         />

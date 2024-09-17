@@ -4,6 +4,8 @@ import AlbumGalleryItem from "./AlbumGalleryItem";
 import { Grid } from "@mui/material";
 import useBreakpoint from "@/hook/useBreakpoint";
 import { AlbumItem } from "@/types/album";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/store";
 
 const NUM_OF_COLUMN: Record<string, number> = {
   xs: 3,
@@ -15,13 +17,16 @@ const NUM_OF_COLUMN: Record<string, number> = {
 
 interface AlbumListProps {
   data: AlbumItem[];
-  isKeyInterrupt: boolean;
   onItemClick: (index: number) => void;
   onItemRatingChange: (index: number, rating: number) => void;
 }
 
 const AlbumGallery = (props: AlbumListProps) => {
-  const { data, isKeyInterrupt, onItemClick, onItemRatingChange } = props;
+  const { data, onItemClick, onItemRatingChange } = props;
+  const isKeyShortcutDisabled = useSelector(
+    (state: RootState) => state.setting.isKeyShortcutDisabled
+  );
+
   const [selectIndex, setSelectIndex] = useState(0);
   const { breakPointName } = useBreakpoint();
 
@@ -107,7 +112,7 @@ const AlbumGallery = (props: AlbumListProps) => {
         default:
       }
     };
-    if (!isKeyInterrupt) {
+    if (!isKeyShortcutDisabled) {
       document.addEventListener("keydown", handleKeyDown);
     }
     return () => {
@@ -117,7 +122,7 @@ const AlbumGallery = (props: AlbumListProps) => {
     breakPointName,
     data,
     handleRatingKeydown,
-    isKeyInterrupt,
+    isKeyShortcutDisabled,
     onItemClick,
     selectIndex,
   ]);
