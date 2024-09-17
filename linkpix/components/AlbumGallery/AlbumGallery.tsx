@@ -17,12 +17,15 @@ const NUM_OF_COLUMN: Record<string, number> = {
 
 interface AlbumListProps {
   data: AlbumItem[];
-  onItemClick: (index: number) => void;
-  onItemRatingChange: (index: number, rating: number) => void;
+  onItemEditSubmit: (
+    album: Partial<AlbumItem> & Required<Pick<AlbumItem, "id">>,
+    prev?: Partial<AlbumItem>
+  ) => void;
+  onItemAction: (id: number) => void;
 }
 
 const AlbumGallery = (props: AlbumListProps) => {
-  const { data, onItemClick, onItemRatingChange } = props;
+  const { data, onItemEditSubmit, onItemAction } = props;
   const isKeyShortcutDisabled = useSelector(
     (state: RootState) => state.setting.isKeyShortcutDisabled
   );
@@ -36,12 +39,12 @@ const AlbumGallery = (props: AlbumListProps) => {
 
   const handleRatingKeydown = useCallback(
     (rating: number) => {
-      onItemRatingChange(
-        selectIndex,
-        data[selectIndex].rating === rating ? 0 : rating
-      );
+      onItemEditSubmit({
+        id: data[selectIndex].id,
+        rating: data[selectIndex].rating === rating ? 0 : rating,
+      });
     },
-    [data, onItemRatingChange, selectIndex]
+    [data, onItemEditSubmit, selectIndex]
   );
 
   useEffect(() => {
@@ -89,7 +92,7 @@ const AlbumGallery = (props: AlbumListProps) => {
           });
           break;
         case "KeyC":
-          onItemClick(selectIndex);
+          onItemAction(data[selectIndex].id);
           break;
         case "Digit0":
           handleRatingKeydown(0);
@@ -123,7 +126,7 @@ const AlbumGallery = (props: AlbumListProps) => {
     data,
     handleRatingKeydown,
     isKeyShortcutDisabled,
-    onItemClick,
+    onItemAction,
     selectIndex,
   ]);
 
@@ -131,16 +134,18 @@ const AlbumGallery = (props: AlbumListProps) => {
     <Grid container columns={NUM_OF_COLUMN} spacing={1}>
       {data.map((album, index) => (
         <AlbumGalleryItem
-          key={index}
+          key={album.id}
           title={album.title}
           subtitle={album.subtitle}
           thumb={album.thumb}
           rating={album.rating}
           info={album.info}
           isSelected={index === selectIndex}
-          onClick={() => onItemClick(index)}
+          onClick={() => onItemAction(album.id)}
           onSelect={() => setSelectIndex(index)}
-          onRatingChange={(rating: number) => onItemRatingChange(index, rating)}
+          onRatingChange={(rating: number) =>
+            onItemEditSubmit({ id: album.id, rating })
+          }
         />
       ))}
     </Grid>

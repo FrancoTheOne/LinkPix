@@ -2,7 +2,14 @@ import { lightTheme } from "@/theme";
 import { AlbumItem } from "@/types/album";
 import { PaginationParams, SortingParams } from "@/types/common";
 import { ThemeProvider } from "@emotion/react";
-import { Box, IconButton, Rating, Tooltip } from "@mui/material";
+import {
+  Box,
+  IconButton,
+  Popover,
+  Rating,
+  Stack,
+  Tooltip,
+} from "@mui/material";
 import {
   DataGrid,
   GridColDef,
@@ -18,6 +25,7 @@ import {
   activateKeyShortcut,
   deactivateKeyShortcut,
 } from "@/lib/setting/settingSlice";
+import { Visibility } from "@mui/icons-material";
 
 interface AlbumGridProps {
   data: AlbumItem[];
@@ -27,10 +35,9 @@ interface AlbumGridProps {
   onSort: (field: string, sort: SortingParams["sort"]) => void;
   onItemEditSubmit: (
     album: Partial<AlbumItem> & Required<Pick<AlbumItem, "id">>,
-    prev: Partial<AlbumItem>,
-    force?: boolean
+    prev?: Partial<AlbumItem>
   ) => void;
-  onItemRatingChange: (index: number, rating: number) => void;
+  onItemAction: (id: number) => void;
   onItemDelete: (id: number, displayName: string) => void;
 }
 
@@ -42,12 +49,16 @@ const AlbumGrid = (props: AlbumGridProps) => {
     sortingParams,
     onSort,
     onItemEditSubmit,
-    onItemRatingChange,
+    onItemAction,
     onItemDelete,
   } = props;
   const dispatch = useDispatch();
   const apiRef = useGridApiRef();
   const [isNextSubmitForce, setIsNextSubmitForce] = useState(false);
+  const [previewPopup, setPreviewPopup] = useState<{
+    id?: Number;
+    anchorEl: HTMLButtonElement | null;
+  }>({ anchorEl: null });
 
   const handleSortModelChange = useCallback(
     (model: GridSortModel) => {
@@ -92,10 +103,11 @@ const AlbumGrid = (props: AlbumGridProps) => {
             id: Number(newRow.id),
             ...Object.fromEntries(updateData),
           },
-          Object.fromEntries(
-            updateData.map(([key]) => [key, oldRow[key as string]])
-          ),
           isNextSubmitForce
+            ? undefined
+            : Object.fromEntries(
+                updateData.map(([key]) => [key, oldRow[key as string]])
+              )
         );
         setIsNextSubmitForce(false);
       }
@@ -107,21 +119,11 @@ const AlbumGrid = (props: AlbumGridProps) => {
   const handleRowDelete = useCallback(
     (params: GridRenderCellParams) => {
       onItemDelete(
-        +params.id.valueOf(),
+        +params.row.id,
         `${params.row?.author} - ${params.row?.name}`
       );
     },
     [onItemDelete]
-  );
-
-  const handleRatingChange = useCallback(
-    (params: GridRenderCellParams, rating: number) => {
-      const index = data.findIndex((item) => item.id === +params.id);
-      if (index !== -1) {
-        onItemRatingChange(index, rating);
-      }
-    },
-    [data, onItemRatingChange]
   );
 
   const columns: GridColDef[] = useMemo(
@@ -138,7 +140,9 @@ const AlbumGrid = (props: AlbumGridProps) => {
           <Rating
             value={params.row.rating}
             size="small"
-            onChange={(_, value) => handleRatingChange(params, value ?? 0)}
+            onChange={(_, value) =>
+              onItemEditSubmit({ id: +params.row.id, rating: value ?? 0 })
+            }
           />
         ),
       },
@@ -147,18 +151,80 @@ const AlbumGrid = (props: AlbumGridProps) => {
         headerName: "Action",
         sortable: false,
         filterable: false,
-        width: 80,
+        width: 100,
         display: "flex",
-        renderCell: (params) => (
-          <Tooltip title="Delete">
-            <IconButton onClick={() => handleRowDelete(params)}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        ),
+        renderCell: (params) => {
+          const open =
+            params.row.id === previewPopup.id && Boolean(previewPopup.anchorEl);
+          const anchorEl =
+            params.row.id === previewPopup.id ? previewPopup.anchorEl : null;
+          return (
+            <Stack direction={"row"}>
+              <IconButton
+                aria-owns={open ? "mouse-over-popover" : undefined}
+                aria-haspopup="true"
+                onMouseEnter={(event) =>
+                  setPreviewPopup({
+                    id: +params.row.id,
+                    anchorEl: event.currentTarget,
+                  })
+                }
+                onMouseLeave={() => setPreviewPopup({ anchorEl: null })}
+                onClick={() => onItemAction(+params.id)}
+              >
+                <Visibility fontSize="small" />
+              </IconButton>
+              <Popover
+                id="mouse-over-popover"
+                sx={{
+                  pointerEvents: "none",
+                  maxWidth: "initial",
+                  maxHeight: "initial",
+                }}
+                open={open}
+                anchorEl={anchorEl}
+                anchorOrigin={{
+                  vertical: "center",
+                  horizontal: "right",
+                }}
+                transformOrigin={{
+                  vertical: "center",
+                  horizontal: "left",
+                }}
+                onClose={() => handleRowDelete(params)}
+                disableRestoreFocus
+              >
+                <Box width={180} height={270}>
+                  {
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/image/thumbs/${params.row.thumb}`}
+                      alt={params.row.title}
+                      draggable={false}
+                      className={
+                        "absolute w-full h-full object-cover transition-all"
+                      }
+                    />
+                  }
+                </Box>
+              </Popover>
+              <Tooltip title="Delete">
+                <IconButton onClick={() => handleRowDelete(params)}>
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          );
+        },
       },
     ],
-    [handleRatingChange, handleRowDelete]
+    [
+      handleRowDelete,
+      onItemAction,
+      onItemEditSubmit,
+      previewPopup.anchorEl,
+      previewPopup.id,
+    ]
   );
 
   return (

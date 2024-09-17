@@ -188,10 +188,15 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
     [handleLimitMenuClose]
   );
 
-  const handleItemClick = useCallback(
-    (index: number) => {
+  const handleItemAction = useCallback(
+    (id: number) => {
       if (albumData) {
-        const action = albumData.data[index].action;
+        const item = albumData.data.find((item) => item.id === id);
+        if (item === undefined) {
+          console.log(`Item id=${id} is undefined`);
+          return;
+        }
+        const action = item.action;
         if (!action) {
           alert("Error: Link is missing");
           return;
@@ -199,7 +204,7 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
         window.open(action, "_blank");
         updateAlbum({
           albumId,
-          id: albumData.data[index].id,
+          id: item.id,
           lastViewAt: new Date().toISOString(),
         });
       }
@@ -221,15 +226,15 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
   const handleItemEditRequest = useCallback(
     (
       item: Partial<AlbumItem> & Required<Pick<AlbumItem, "id">>,
-      prev: Partial<AlbumItem>,
-      force = false
+      prev?: Partial<AlbumItem>
     ) => {
-      const changeList = Object.entries(prev).map(
-        ([key, value]) => `${key}:\n${value} ⇒ ${item[key as keyof AlbumItem]}`
-      );
-      if (force) {
+      if (prev === undefined) {
         handleItemEditSubmit(item);
       } else {
+        const changeList = Object.entries(prev).map(
+          ([key, value]) =>
+            `${key}:\n${value} ⇒ ${item[key as keyof AlbumItem]}`
+        );
         setDialogData({
           title: "Confirmation",
           content: changeList.join("\n"),
@@ -239,19 +244,6 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
       }
     },
     [handleItemEditSubmit, openDialog, setDialogData]
-  );
-
-  const handleItemRatingChange = useCallback(
-    (index: number, rating: number) => {
-      if (albumData) {
-        updateAlbum({
-          albumId,
-          id: albumData.data[index].id,
-          rating,
-        });
-      }
-    },
-    [albumId, albumData, updateAlbum]
   );
 
   const handleItemDelete = useCallback(
@@ -406,8 +398,8 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
           {mode === ViewMode.Browse && (
             <AlbumGallery
               data={albumData.data}
-              onItemClick={handleItemClick}
-              onItemRatingChange={handleItemRatingChange}
+              onItemEditSubmit={handleItemEditRequest}
+              onItemAction={handleItemAction}
             />
           )}
           {mode === ViewMode.Edit && (
@@ -418,7 +410,7 @@ const AlbumPage = ({ params }: { params: { id: string } }) => {
               sortingParams={sortingParams}
               onSort={handleSort}
               onItemEditSubmit={handleItemEditRequest}
-              onItemRatingChange={handleItemRatingChange}
+              onItemAction={handleItemAction}
               onItemDelete={handleItemDeleteRequest}
             />
           )}
