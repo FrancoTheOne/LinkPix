@@ -95,7 +95,9 @@ const AlbumGalleryItem = (props: AlbumListItemProps) => {
                 <Typography
                   color={isSelected ? "grey.900" : "grey.100"}
                   fontSize={"0.875rem"}
-                  className="line-clamp-2 transition"
+                  className={`${
+                    isSelected ? "line-clamp-3" : "line-clamp-1"
+                  } transition`}
                 >
                   {title}
                 </Typography>
@@ -105,14 +107,16 @@ const AlbumGalleryItem = (props: AlbumListItemProps) => {
                 <Typography
                   color={isSelected ? "common.black" : "grey.100"}
                   fontSize={"0.75rem"}
-                  className="flex-1 line-clamp-1 transition"
+                  className={`flex-1 ${
+                    isSelected ? "line-clamp-2" : "line-clamp-1"
+                  } transition`}
                 >
                   {subtitle}
                 </Typography>
                 <Typography
                   color={isSelected ? "common.black" : "grey.100"}
                   fontSize={"0.75rem"}
-                  className="line-clamp-1 transition"
+                  className="transition"
                 >
                   {size}
                 </Typography>
