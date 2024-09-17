@@ -9,11 +9,7 @@ import { Op } from "sequelize";
 import { unlink } from "fs";
 import { dirname } from "path";
 import { db } from "../models/index";
-import {
-  AlbumAttributes,
-  AlbumInstnace,
-  getAlbumModel,
-} from "../models/GenericAlbum";
+import { AlbumAttributes, getAlbumModel } from "../models/GenericAlbum";
 
 const __dirname = dirname(import.meta.filename);
 
@@ -95,15 +91,27 @@ router.patch<{ id: string; itemId: string }, any, Partial<AlbumAttributes>>(
   "/:id/:itemId",
   async (req, res) => {
     const { id, itemId } = req.params;
+    const body = req.body;
     try {
       const album = await getAlbumModel(db, id);
       const item = await album.findByPk(itemId);
       if (!item) {
-        return res.status(404).json({ message: "Album not found" });
+        return res.status(404).json({ message: "Item not found" });
       }
+
+      if ("thumb" in body) {
+        saveCropImage(body.thumb, join(thumbFolder, item.thumb), 180, 270);
+        delete body.thumb;
+        if (Object.keys(body).length === 0) {
+          return res.status(200).json({
+            message: "Thumbnail updated successfully",
+          });
+        }
+      }
+
       const result = await album.update(req.body, { where: { id: itemId } });
       res.status(200).json({
-        message: "Album updated successfully",
+        message: "Item updated successfully",
         data: result,
       });
     } catch (error) {
@@ -132,7 +140,7 @@ router.delete<{ id: string; itemId: string }>("/:id", async (req, res) => {
   res.json(result);
 });
 
-router.put<{ id: string }, any, Partial<AlbumAttributes>>(
+router.post<{ id: string }, any, Partial<AlbumAttributes>>(
   "/:id",
   async (req, res) => {
     try {
@@ -142,16 +150,13 @@ router.put<{ id: string }, any, Partial<AlbumAttributes>>(
       const info = JSON.parse(req.body.info);
       const content = JSON.parse(req.body.content);
 
-      // if (!info || !("source" in info)) {
-      //   return res.status(400).json({ message: "Insufficient data" });
-      // }
-
       const item = await album.findOne({
         where: { action },
       });
       if (item && thumb) {
-        saveCropImage(thumb, join(thumbFolder, item.thumb), 180, 270);
-        return res.json({ message: "Album thumbnail updated" });
+        return res
+          .status(409)
+          .json({ id: item.id, message: "Item already exist!" });
       }
 
       const fileName = thumb ? `${new Date().getTime()}.webp` : "";
